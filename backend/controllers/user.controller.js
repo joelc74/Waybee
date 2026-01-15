@@ -7,7 +7,7 @@ const Op = db.Sequelize.Op;
 // 🔐 Clave JWT — ¡NO LA DEJES EN DURO EN PRODUCCIÓN!
 const JWT_SECRET = process.env.JWT_SECRET || 'dabuten';
 
-application.use(function (req,res,next) {
+/*app.use(function (req,res,next) {
     //check header or url parameters or post parameters for token
     var token = req.headers['authorization'];
     if(!token) return next(); // if no token, continue
@@ -23,7 +23,7 @@ application.use(function (req,res,next) {
 
         return next();
     }
-});
+});*/
 
 // =====================================================
 // 🧩 REGISTRO DE USUARIO

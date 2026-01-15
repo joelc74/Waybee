@@ -51,19 +51,16 @@ module.exports = (sequelize, Sequelize) => {
         ]
     });
 
-    Conductor.associate = (models)=> {
-        Conductor.hasMany(models.usuario,{
+       Conductor.associate = function(models) {
+        Conductor.belongsTo(models.usuario, {
             foreignKey: 'id_usuario',
-          as: 'usuario',
+            as: 'usuario'
         });
-
-        };
-    Conductor.associate = (models)=> {
-        Conductor.hasMany(models.vehiculo,{
+        Conductor.belongsTo(models.vehiculo, {
             foreignKey: 'id_vehiculo',
-            as: 'vehiculo',
+            as: 'vehiculo'
         });
-    };    
+    };
     
     return Conductor;
 };

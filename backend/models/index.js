@@ -28,4 +28,10 @@ db.pago = require("./pago.model.js")(sequelize, Sequelize);
 db.valoracion = require("./valoracion.model.js")(sequelize, Sequelize);
 db.user = require ("./user.model.js")(sequelize, Sequelize);
 
+Object.keys(db).forEach(modelName => {
+    if (db[modelName].associate) {
+        db[modelName].associate(db);
+    }
+});
+
 module.exports = db;

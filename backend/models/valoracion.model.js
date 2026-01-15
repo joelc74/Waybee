@@ -51,7 +51,7 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.DATE,
             defaultValue: Sequelize.NOW,
             comment: 'Fecha y hora de la valoración'
-        
+
         }
     }, {
         tableName: "valoracion",
@@ -86,19 +86,18 @@ module.exports = (sequelize, Sequelize) => {
         comment: 'Tabla de valoraciones para viajes y envíos'
     });
 
-    Valoracion.associate = (models) => {
-        Valoracion.hasMany(models.usuario, {
+    Valoracion.associate = function (models) {
+        Valoracion.belongsTo(models.usuario, {
             foreignKey: 'id_usuario',
-            as: 'usuario',
+            as: 'usuario'
         });
-
-    };
-    Valoracion.associate = (models) => {
-        Valoracion.hasMany(models.conductor, {
+        Valoracion.belongsTo(models.conductor, {
             foreignKey: 'id_conductor',
-            as: 'conductor',
+            as: 'conductor'
         });
     };
-    
+
+
+
     return Valoracion;
 };

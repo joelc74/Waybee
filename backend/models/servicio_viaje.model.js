@@ -80,17 +80,14 @@ module.exports = (sequelize, Sequelize) => {
             }
         ]
     });
-    Servicio_viaje.associate = (models) => {
-        Servicio_viaje.hasMany(models.usuario, {
+   Servicio_viaje.associate = function(models) {
+        Servicio_viaje.belongsTo(models.usuario, {
             foreignKey: 'id_usuario',
-            as: 'usuario',
+            as: 'usuario'
         });
-
-    };
-    Servicio_viaje.associate = (models) => {
-        Servicio_viaje.hasMany(models.conductor, {
+        Servicio_viaje.belongsTo(models.conductor, {
             foreignKey: 'id_conductor',
-            as: 'conductor',
+            as: 'conductor'
         });
     };
 

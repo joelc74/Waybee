@@ -17,11 +17,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
 
 //Sincronizar BD
-db.sequelize.sync().then(() => {
-    console.log("Base de datos sincronizada");
-}).catch(err => {
-    console.error(" Error al sincronizar:", err);
-});
+db.sequelize.sync({ alter: true })  // Usa { force: true } solo en desarrollo para recrear tablas
+    .then(() => {
+        console.log("✅ Base de datos sincronizada");
+    })
+    .catch(err => {
+        console.error("❌ Error al sincronizar:", err);
+    });
 
 //Ruta de raiz
 app.get("/", (req, res) => {
@@ -29,13 +31,14 @@ app.get("/", (req, res) => {
 });
 
 //Importar las rutas de Waybee
-require("./routes/servicio_viaje.routes")(app);
-require("./routes/servicio_envio.routes")(app);
 require("./routes/conductor.routes")(app);
-require("./routes/vehiculo.routes")(app);
-require("./routes/usuario.routes")(app);
+require("./routes/pago.routes")(app);
+require("./routes/servicio_envio.routes")(app);
+require("./routes/servicio_viaje.routes")(app);
 require("./routes/user.routes")(app);
+require("./routes/usuario.routes")(app);
 require("./routes/valoracion.routes")(app);
+require("./routes/vehiculo.routes")(app);
 
 //Servidor 
 const PORT = process.env.PORT || 8080;
