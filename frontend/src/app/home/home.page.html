@@ -1,20 +1,180 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Blank
-    </ion-title>
+<ion-header class="wb-header" [translucent]="true">
+  <ion-toolbar class="wb-toolbar">
+
+    <!-- TOPBAR -->
+    <div class="wb-topbar">
+      <div class="wb-logo">
+        <img [src]="logoSrc" alt="Waybee" (error)="onLogoError($event)" />
+      </div>
+
+      <div class="wb-right-icons">
+        <!-- Notificaciones -->
+        <ion-button fill="clear" class="wb-bell" aria-label="Notificaciones">
+          <ion-icon name="notifications"></ion-icon>
+        </ion-button>
+
+        <!-- Usuario (solo informativo, sin acción) -->
+        <div class="wb-user" aria-label="Usuario">
+          <ion-icon name="person"></ion-icon>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUSCADOR ORIGEN -->
+    <div class="wb-location">
+      <div class="wb-location-pill" #locationPill>
+        <ion-icon name="location-outline" class="wb-loc-icon"></ion-icon>
+
+        <ion-input
+          class="wb-location-input"
+          placeholder="Escribe una dirección…"
+          [value]="locationQuery"
+          (ionInput)="onLocationInput($event)"
+          (ionFocus)="onLocationFocus()"
+          (keydown.enter)="onEnterSearch()"
+        ></ion-input>
+
+        <ion-button
+          fill="clear"
+          class="wb-location-clear"
+          aria-label="Limpiar"
+          (click)="clearLocation()"
+          *ngIf="locationQuery?.length"
+        >
+          <ion-icon name="close-circle"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
+
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content [fullscreen]="true" class="wb-content">
 
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+  <!-- ✅ Dropdown FIXED (ORIGEN) -->
+  <div
+    class="wb-suggest wb-suggest-fixed"
+    *ngIf="showSuggestions"
+    [style.top.px]="suggestTop"
+    [style.left.px]="suggestLeft"
+    [style.width.px]="suggestWidth"
+  >
+    <div class="wb-suggest-empty" *ngIf="locationQuery.trim().length >= 2 && !loading && suggestions.length === 0">
+      Sin resultados
+    </div>
+
+    <div class="wb-suggest-empty" *ngIf="loading">
+      Buscando…
+    </div>
+
+    <button class="wb-suggest-item" type="button" *ngFor="let s of suggestions" (mousedown)="selectSuggestion(s)">
+      <div class="wb-suggest-title">{{ s.uiLabel }}</div>
+    </button>
+  </div>
+
+  <div class="wb-stage">
+    <div id="map" class="wb-map"></div>
+
+    <div class="wb-sheet">
+      <div class="wb-tabs">
+        <button class="wb-tab" [class.active]="selectedService === 'viaje'" (click)="setService('viaje')" type="button">
+          <ion-icon name="car-outline"></ion-icon>
+          <span>Viaje</span>
+        </button>
+
+        <button class="wb-tab" [class.active]="selectedService === 'envio'" (click)="setService('envio')" type="button">
+          <ion-icon name="cube-outline"></ion-icon>
+          <span>Envío</span>
+        </button>
+      </div>
+
+      <!-- ✅ CTA -> se transforma a input de destino -->
+      <ng-container *ngIf="!destMode; else destInputTpl">
+        <button class="wb-cta" type="button" (click)="openDestination()">
+          ¿A dónde vamos?
+        </button>
+      </ng-container>
+
+      <ng-template #destInputTpl>
+        <!-- ✅ PANEL flotante (distancia + precio) + CTA -->
+        <div class="wb-fare" *ngIf="distanceLabel && priceLabel">
+          <div class="wb-fare-left">
+            <div class="wb-fare-row">{{ distanceLabel }}</div>
+            <div class="wb-fare-row wb-fare-strong">{{ priceLabel }}</div>
+          </div>
+
+          <button
+            class="wb-pay"
+            type="button"
+            [disabled]="!canPay"
+            (click)="payTrip()"
+            aria-label="Aceptar y pagar"
+          >
+            <ion-icon name="card-outline"></ion-icon>
+            <span>Pagar</span>
+          </button>
+        </div>
+
+        <!-- INPUT DESTINO -->
+        <div class="wb-dest">
+          <div class="wb-location-pill wb-dest-pill">
+            <ion-icon name="navigate-outline" class="wb-loc-icon"></ion-icon>
+
+            <ion-input
+              class="wb-location-input"
+              placeholder="Destino…"
+              [value]="destQuery"
+              (ionInput)="onDestInput($event)"
+              (ionFocus)="onDestFocus()"
+              (keydown.enter)="onDestEnter()"
+            ></ion-input>
+
+            <ion-button
+              fill="clear"
+              class="wb-location-clear"
+              aria-label="Limpiar destino"
+              (click)="clearDestination()"
+              *ngIf="destQuery?.length"
+            >
+              <ion-icon name="close-circle"></ion-icon>
+            </ion-button>
+          </div>
+
+          <!-- Dropdown destino (normal, dentro del sheet) -->
+          <div class="wb-suggest wb-dest-suggest" *ngIf="showDestSuggestions">
+            <div class="wb-suggest-empty" *ngIf="destQuery.trim().length >= 2 && !destLoading && destSuggestions.length === 0">
+              Sin resultados
+            </div>
+
+            <div class="wb-suggest-empty" *ngIf="destLoading">
+              Buscando…
+            </div>
+
+            <button class="wb-suggest-item" type="button" *ngFor="let s of destSuggestions" (mousedown)="selectDestSuggestion(s)">
+              <div class="wb-suggest-title">{{ s.uiLabel }}</div>
+            </button>
+          </div>
+        </div>
+      </ng-template>
+
+      <div class="wb-bottom-nav">
+        <button class="wb-bnav-item" type="button" (click)="goFavorites()">
+          <div class="wb-bnav-icon"><ion-icon name="heart"></ion-icon></div>
+          <div class="wb-bnav-label">Favoritos</div>
+        </button>
+
+        <button class="wb-bnav-item" type="button" (click)="goHistory()">
+          <div class="wb-bnav-icon"><ion-icon name="time"></ion-icon></div>
+          <div class="wb-bnav-label">Historial</div>
+        </button>
+
+        <button class="wb-bnav-item" type="button" (click)="goAccount()">
+          <div class="wb-bnav-icon"><ion-icon name="person"></ion-icon></div>
+          <div class="wb-bnav-label">Mi Cuenta</div>
+        </button>
+      </div>
+
+      <div class="wb-safe-space"></div>
+    </div>
   </div>
 </ion-content>

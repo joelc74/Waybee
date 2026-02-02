@@ -35,3 +35,41 @@
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import "@ionic/angular/css/palettes/dark.system.css";
+@import "leaflet/dist/leaflet.css";
+
+
+/* =========================================
+   WAYBEE - Ocultar UI/instrucciones de Leaflet Routing Machine
+   (panel, itinerary, overlay dentro del mapa)
+   ========================================= */
+
+.leaflet-routing-container,
+.leaflet-routing-container-hide,
+.leaflet-routing-alt,
+.leaflet-routing-geocoders,
+.leaflet-routing-error,
+.leaflet-routing-collapse-btn,
+.leaflet-routing-itinerary,
+.leaflet-routing-instructions,
+.leaflet-routing-instruction,
+.leaflet-routing-instructions-container,
+.leaflet-routing-summary {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* A veces se cuelga dentro de .leaflet-control */
+.leaflet-control-container .leaflet-routing-container,
+.leaflet-control-container .leaflet-routing-container-hide,
+.leaflet-control-container .leaflet-routing-itinerary {
+  display: none !important;
+}
+
+/* Si lo inyecta dentro de panes */
+.leaflet-pane .leaflet-routing-container,
+.leaflet-pane .leaflet-routing-itinerary,
+.leaflet-pane .leaflet-routing-instructions {
+  display: none !important;
+}
