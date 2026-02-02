@@ -1,7 +1,7 @@
 module.exports = {
   HOST: "localhost",
   USER: "root",
-  PASSWORD: "root",
+  PASSWORD: "PGL1+",
   DB: "waybee_db",
   dialect: "mysql",
   pool: {

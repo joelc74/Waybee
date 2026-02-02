@@ -10,7 +10,11 @@ const routes: Routes = [
     path: '',
     redirectTo: 'home',
     pathMatch: 'full'
+  },  {
+    path: 'driver',
+    loadChildren: () => import('./driver/driver.module').then( m => m.DriverPageModule)
   },
+
 ];
 
 @NgModule({

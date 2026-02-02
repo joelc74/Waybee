@@ -39,6 +39,8 @@ require("./routes/user.routes")(app);
 require("./routes/usuario.routes")(app);
 require("./routes/valoracion.routes")(app);
 require("./routes/vehiculo.routes")(app);
+require("./routes/solicitud.routes")(app);
+
 
 //Servidor 
 const PORT = process.env.PORT || 8080;

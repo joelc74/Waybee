@@ -27,6 +27,8 @@ db.servicio_envio = require("./servicio_envio.model.js")(sequelize, Sequelize);
 db.pago = require("./pago.model.js")(sequelize, Sequelize);
 db.valoracion = require("./valoracion.model.js")(sequelize, Sequelize);
 db.user = require ("./user.model.js")(sequelize, Sequelize);
+db.solicitud = require("./solicitud.model.js")(sequelize, Sequelize);
+
 
 Object.keys(db).forEach(modelName => {
     if (db[modelName].associate) {

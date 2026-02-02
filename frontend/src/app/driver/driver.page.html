@@ -1,0 +1,50 @@
+<ion-header class="wb-header" [translucent]="true">
+  <ion-toolbar class="wb-toolbar">
+    <div class="wb-topbar">
+      <div class="wb-logo">
+        <img src="assets/Images/logo/waybee-logo-gris.png" alt="Waybee" />
+      </div>
+
+      <div class="wb-right">
+        <ion-button fill="clear" class="wb-bell" aria-label="Notificaciones">
+          <ion-icon name="notifications"></ion-icon>
+        </ion-button>
+
+        <div class="wb-avatar" aria-label="Conductor">
+          <ion-icon name="person"></ion-icon>
+        </div>
+      </div>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="wb-content">
+
+  <!-- CENTRO: POOL (VISIBLE AUNQUE ESTÉ VACÍO) -->
+  <div class="wb-pool">
+    <div class="wb-pool-head">
+      <div class="wb-pool-title">Solicitudes</div>
+      <div class="wb-pool-sub">Cuando entren, aparecerán aquí</div>
+    </div>
+
+    <div class="wb-empty">
+      <ion-icon name="list-outline"></ion-icon>
+      <div class="wb-empty-title">Sin solicitudes</div>
+      <div class="wb-empty-sub">No hay solicitudes disponibles ahora mismo</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="wb-bottom-nav">
+    <button class="wb-bnav-item" type="button">
+      <div class="wb-bnav-icon"><ion-icon name="time"></ion-icon></div>
+      <div class="wb-bnav-label">Historial</div>
+    </button>
+
+    <button class="wb-bnav-item" type="button">
+      <div class="wb-bnav-icon"><ion-icon name="person"></ion-icon></div>
+      <div class="wb-bnav-label">Cuenta</div>
+    </button>
+  </div>
+
+</ion-content>
