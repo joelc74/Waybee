@@ -67,10 +67,6 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: true
     },
 
-    duracion_minutos: {
-      type: Sequelize.INTEGER,
-      allowNull: true
-    },
 
     precio_estimado: {
       type: Sequelize.DECIMAL(10, 2),

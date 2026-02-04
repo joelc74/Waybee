@@ -1,3 +1,12 @@
+
+exports.pool = async (req, res) => {
+  return res.status(200).send([]); // placeholder
+};
+
+exports.accept = async (req, res) => {
+  return res.status(200).send({ ok: true }); // placeholder
+};
+
 exports.create = async (req, res) => {
   try {
     const body = req.body || {};
@@ -54,7 +63,6 @@ exports.create = async (req, res) => {
 
       // Estimaciones (si las guardas aquí)
       distancia_km: body.distancia_km ?? null,
-      duracion_minutos: body.duracion_minutos ?? null,
       precio_estimado: body.precio_estimado ?? null
     });
 
