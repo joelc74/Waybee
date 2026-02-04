@@ -20,6 +20,7 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
 db.usuario = require("./usuario.model.js")(sequelize, Sequelize);
+db.notificacion = require("./notificacion.model.js")(sequelize, Sequelize);
 db.vehiculo = require("./vehiculo.model.js")(sequelize, Sequelize);
 db.conductor = require("./conductor.model.js")(sequelize, Sequelize);
 db.servicio_viaje = require("./servicio_viaje.model.js")(sequelize, Sequelize);

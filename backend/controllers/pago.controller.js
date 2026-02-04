@@ -6,7 +6,7 @@ const Op = db.Sequelize.Op;
 //Create and Save a new Pay
 exports.create = (req, res) => {
     //Validate request
-    if (!req.body.tipo_servicio || !req.body.metodo || !req.body.estado || !req.body.monto || !req.body.fecha_pago || !req.body.transaccion_id) {
+    if (!req.body.tipo_servicio || !req.body.metodo || !req.body.monto || !req.body.fecha_pago || !req.body.transaccion_id) {
         res.status(400).send({
             message: "Content can not be empty!"
         });
@@ -16,7 +16,6 @@ exports.create = (req, res) => {
     Pago.create({
         tipo_servicio: req.body.tipo_servicio,
         metodo: req.body.metodo,
-        estado: req.body.estado,
         monto: req.body.monto,
         fecha_pago: req.body.fecha_pago,
         transaccion_id: req.body.transaccion_id,

@@ -17,10 +17,7 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.ENUM('tarjeta', 'efectivo', 'bizum', 'paypal'),
             allowNull: false
         },
-        estado: {
-            type: Sequelize.ENUM('pendiente', 'completado', 'fallido', 'reembolsado'),
-            defaultValue: 'pendiente'
-        },
+        
         monto: {
             type: Sequelize.DECIMAL(10, 2),
             allowNull: false
@@ -40,9 +37,7 @@ module.exports = (sequelize, Sequelize) => {
             {
                 fields: ['id_servicio', 'tipo_servicio']
             },
-            {
-                fields: ['estado']
-            },
+           
             {
                 fields: ['fecha_pago']
             }

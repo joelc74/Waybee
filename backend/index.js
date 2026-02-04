@@ -40,7 +40,7 @@ require("./routes/usuario.routes")(app);
 require("./routes/valoracion.routes")(app);
 require("./routes/vehiculo.routes")(app);
 require("./routes/solicitud.routes")(app);
-
+require("./routes/notificacion.routes")(app);
 
 //Servidor 
 const PORT = process.env.PORT || 8080;
