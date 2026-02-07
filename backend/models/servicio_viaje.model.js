@@ -21,6 +21,14 @@ module.exports = (sequelize, Sequelize) => {
                 key: 'id_conductor'
             }
         },
+        id_solicitud: {
+            type: Sequelize.INTEGER,
+            allowNull: true,
+            references: {
+                model: 'solicitud',
+                key: 'id_solicitud'
+            }
+        },
         numero_personas: {
             type: Sequelize.INTEGER,
             allowNull: false,
@@ -73,6 +81,9 @@ module.exports = (sequelize, Sequelize) => {
                 fields: ['id_conductor']
             },
             {
+                fields: ['id_solicitud']
+            },
+            {
                 fields: ['estado']
             },
             {
@@ -88,6 +99,10 @@ module.exports = (sequelize, Sequelize) => {
         Servicio_viaje.belongsTo(models.conductor, {
             foreignKey: 'id_conductor',
             as: 'conductor'
+        });
+        Servicio_viaje.belongsTo(models.solicitud, {
+            foreignKey: 'id_solicitud',
+            as: 'solicitud'
         });
     };
 
