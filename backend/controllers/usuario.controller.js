@@ -1,88 +1,112 @@
-const { where } = require("sequelize");
 const db = require("../models");
-const Usuario = db.usuario;
-const Op = db.Sequelize.Op;
+const bcrypt = require("bcrypt");
 
-//Create and Save a new User
-exports.create = (req, res) => {
-    //Validate request
-    if (!req.body.nombre || !req.body.email || !req.body.telefono || !req.body.activo || !req.body.password_hash || !req.body.fecha_registro || !req.body.rol) {
-        res.status(400).send({
-            message: "Content can not be empty!"
-        });
-        return;
+const Usuario = db.usuario;
+
+exports.create = async (req, res) => {
+  try {
+    const body = req.body || {};
+
+    if (!body.nombre || !body.email) {
+      return res.status(400).json({ message: "nombre y email son obligatorios." });
     }
 
-    Usuario.create({
-        nombre: req.body.nombre,
-        email: req.body.email,
-        telefono: req.body.telefono,
-        activo: req.body.activo,
-        password_hash: req.body.password_hash,
-        fecha_registro: req.body.fecha_registro,
-        rol: req.body.rol,
-        filename: req.file ? req.file.filename : ""
+    // password: puedes enviar password (plano) o password_hash (ya hasheado)
+    let password_hash = body.password_hash;
+    if (!password_hash && body.password) {
+      password_hash = await bcrypt.hash(body.password, 12);
+    }
+    if (!password_hash) {
+      return res.status(400).json({ message: "password o password_hash es obligatorio." });
+    }
 
-    })
-        .then(data => res.send(data))
-        .catch(err => res.status(500).send({ message: err.message }));
+    const usuario = await Usuario.create({
+      nombre: body.nombre,
+      email: body.email,
+      telefono: body.telefono || null,
+      activo: body.activo ?? true,
+      password_hash,
+      rol: body.rol || "user",
+      // fecha_registro default en modelo
+    });
+
+    return res.status(201).json(usuario);
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error creando usuario." });
+  }
 };
 
-// Get all User
-exports.findAll = (req, res) => {
-    Usuario.findAll()
-        .then(data => res.send(data))
-        .catch(err => res.status(500).send({ message: err.message }));
+exports.findAll = async (req, res) => {
+  try {
+    const { q, rol, activo } = req.query;
+
+    const where = {};
+    if (rol) where.rol = rol;
+    if (activo !== undefined) where.activo = String(activo) === "true";
+
+    if (q) {
+      where[db.Sequelize.Op.or] = [
+        { nombre: { [db.Sequelize.Op.like]: `%${q}%` } },
+        { email: { [db.Sequelize.Op.like]: `%${q}%` } },
+      ];
+    }
+
+    const usuarios = await Usuario.findAll({ where });
+    return res.json(usuarios);
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error listando usuarios." });
+  }
 };
 
-//Get User by Id
-
-exports.findOne = (req, res) => {
+exports.findOne = async (req, res) => {
+  try {
     const id = req.params.id;
-    console.log("🟢 Buscando Usuario con id:", id);
-
-    Usuario.findByPk(id)
-        .then(data => {
-            if (data) {
-                console.log("Usuario encontrado:", data);
-                res.send(data);
-            } else {
-                console.log("⚠️ No existe usuario con id:", id);
-                res.status(404).send({ message: `No existe usuario con id=${id}` });
-            }
-        })
-        .catch(err => {
-            console.error("❌ Error al buscar usuario:", err);
-            res.status(500).send({
-                message: err.message || "Error al obtener usuario con id=" + id
-            });
-        });
+    const usuario = await Usuario.findByPk(id);
+    if (!usuario) return res.status(404).json({ message: "Usuario no encontrado." });
+    return res.json(usuario);
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error obteniendo usuario." });
+  }
 };
 
-//Update User
-exports.update = (req, res) => {
+exports.update = async (req, res) => {
+  try {
     const id = req.params.id;
-    Usuario.update(req.body, { where: { id: id } })
-        .then(num => {
-            if (num == 1) res.send({ message: "Usuario actualizado" });
-            else res.send({ message: `No se puede actualizar usuario con id=${id}` });
+    const body = req.body || {};
 
-        })
-        .catch(err => {
-            console.error("❌ Error al buscar usuario:", err);
-            res.status(500).send({
-                message: err.message || "error al obtener usuario con id=" + id
-            });
-        });
+    const usuario = await Usuario.findByPk(id);
+    if (!usuario) return res.status(404).json({ message: "Usuario no encontrado." });
+
+    // Si llega password, re-hash
+    if (body.password) {
+      body.password_hash = await bcrypt.hash(body.password, 12);
+      delete body.password;
+    }
+
+    await usuario.update({
+      nombre: body.nombre ?? usuario.nombre,
+      email: body.email ?? usuario.email,
+      telefono: body.telefono ?? usuario.telefono,
+      activo: body.activo ?? usuario.activo,
+      password_hash: body.password_hash ?? usuario.password_hash,
+      rol: body.rol ?? usuario.rol,
+    });
+
+    return res.json(usuario);
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error actualizando usuario." });
+  }
 };
 
-//Delete User
-exports.delete = (req, res) => {
+exports.remove = async (req, res) => {
+  try {
     const id = req.params.id;
-    Usuario.destroy({ where: { id: id } })
-        .then(num => {
-            if (num == 1) res.send({ message: "Usuario eliminado" });
-            else res.send({ message: 'No se pudo eliminar al usuario con id=${id}' });
-        })
-        .catch(err => res.status(500).send({ message: err.message }));
+    const usuario = await Usuario.findByPk(id);
+    if (!usuario) return res.status(404).json({ message: "Usuario no encontrado." });
+
+    await usuario.destroy();
+    return res.json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error eliminando usuario." });
+  }
 };

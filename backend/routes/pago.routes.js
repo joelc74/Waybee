@@ -1,24 +1,12 @@
 module.exports = app => {
   const pago = require("../controllers/pago.controller.js");
-   var upload = require('../multer/upload.js');
+  const router = require("express").Router();
 
-  var router = require("express").Router();
-
-  //Create a new pay
-  router.post("/",upload.single('file'), pago.create);
-
-  //Retrieve all pay
+  router.post("/", pago.create);
   router.get("/", pago.findAll);
-
-  //Retrieve a single pay with id
   router.get("/:id", pago.findOne);
-
-  //Update a pay with id
   router.put("/:id", pago.update);
+  router.delete("/:id", pago.remove);
 
-  //Delete a pay with id
-  router.delete("/:id", pago.delete);
-
-  app.use('/api/pago', router);
-
+  app.use("/api/pago", router);
 };

@@ -1,86 +1,78 @@
-const { where } = require("sequelize");
 const db = require("../models");
 const Valoracion = db.valoracion;
-const Op = db.Sequelize.Op;
 
-//Create and Save a new Feedback
-exports.create = (req, res) => {
-    //Validate request
-    if (!req.body.tipo_servicio || !req.body.puntuacion || !req.body.comentario || !req.body.fecha_valoracion) {
-        res.status(400).send({
-            message: "Content can not be empty!"
-        });
-        return;
+exports.create = async (req, res) => {
+  try {
+    const body = req.body || {};
+    if (!body.id_servicio || !body.id_usuario || !body.id_conductor || !body.puntuacion) {
+      return res.status(400).json({ message: "id_servicio, id_usuario, id_conductor y puntuacion son obligatorios." });
     }
 
-    Valoracion.create({
-        tipo_servicio: req.body.tipo_servicio,
-        puntuacion: req.body.puntuacion,
-        comentario: req.body.tipo_empleado,
-        fecha_valoracion: req.body.fecha_valoracion,
+    const valoracion = await Valoracion.create({
+      id_servicio: body.id_servicio,
+      id_usuario: body.id_usuario,
+      id_conductor: body.id_conductor,
+      puntuacion: body.puntuacion,
+      comentario: body.comentario || null,
+      // fecha_valoracion default
+    });
 
-        filename: req.file ? req.file.filename : ""
-
-    })
-        .then(data => res.send(data))
-        .catch(err => res.status(500).send({ message: err.message }));
+    return res.status(201).json(valoracion);
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error creando valoración." });
+  }
 };
 
-// Get all Feedback
-exports.findAll = (req, res) => {
-    Valoracion.findAll()
-        .then(data => res.send(data))
-        .catch(err => res.status(500).send({ message: err.message }));
+exports.findAll = async (req, res) => {
+  try {
+    const { id_servicio, id_conductor, id_usuario } = req.query;
+    const where = {};
+    if (id_servicio) where.id_servicio = id_servicio;
+    if (id_conductor) where.id_conductor = id_conductor;
+    if (id_usuario) where.id_usuario = id_usuario;
+
+    const valoraciones = await Valoracion.findAll({ where, order: [["fecha_valoracion", "DESC"]] });
+    return res.json(valoraciones);
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error listando valoraciones." });
+  }
 };
 
-//Get Feedback by Id
-
-exports.findOne = (req, res) => {
-    const id = req.params.id;
-    console.log("🟢 Buscando Valoracion con id:", id);
-
-    Valoracion.findByPk(id)
-        .then(data => {
-            if (data) {
-                console.log("Valoracion encontrada:", data);
-                res.send(data);
-            } else {
-                console.log("⚠️ No existe Valoracion con id:", id);
-                res.status(404).send({ message: `No existe Valoracion con id=${id}` });
-            }
-        })
-        .catch(err => {
-            console.error("❌ Error al buscar Valoracion:", err);
-            res.status(500).send({
-                message: err.message || "Error al obtener Valoracion con id=" + id
-            });
-        });
+exports.findOne = async (req, res) => {
+  try {
+    const v = await Valoracion.findByPk(req.params.id);
+    if (!v) return res.status(404).json({ message: "Valoración no encontrada." });
+    return res.json(v);
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error obteniendo valoración." });
+  }
 };
 
-//Update Feedback
-exports.update = (req, res) => {
-    const id = req.params.id;
-    Valoracion.update(req.body, { where: { id: id } })
-        .then(num => {
-            if (num == 1) res.send({ message: "Valoracion actualizada" });
-            else res.send({ message: `No se puede actualizar Valoracion con id=${id}` });
+exports.update = async (req, res) => {
+  try {
+    const v = await Valoracion.findByPk(req.params.id);
+    if (!v) return res.status(404).json({ message: "Valoración no encontrada." });
 
-        })
-        .catch(err => {
-            console.error("❌ Error al buscar Valoracion:", err);
-            res.status(500).send({
-                message: err.message || "error al obtener Valoracion con id=" + id
-            });
-        });
+    const body = req.body || {};
+    await v.update({
+      puntuacion: body.puntuacion ?? v.puntuacion,
+      comentario: body.comentario ?? v.comentario,
+    });
+
+    return res.json(v);
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error actualizando valoración." });
+  }
 };
 
-//Delete Feedback
-exports.delete = (req, res) => {
-    const id = req.params.id;
-    Valoracion.destroy({ where: { id: id } })
-        .then(num => {
-            if (num == 1) res.send({ message: "Valoracion eliminada" });
-            else res.send({ message: 'No se pudo eliminar la Valoracion con id=${id}' });
-        })
-        .catch(err => res.status(500).send({ message: err.message }));
+exports.remove = async (req, res) => {
+  try {
+    const v = await Valoracion.findByPk(req.params.id);
+    if (!v) return res.status(404).json({ message: "Valoración no encontrada." });
+
+    await v.destroy();
+    return res.json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error eliminando valoración." });
+  }
 };

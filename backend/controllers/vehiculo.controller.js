@@ -1,86 +1,86 @@
-const { where } = require("sequelize");
 const db = require("../models");
 const Vehiculo = db.vehiculo;
-const Op = db.Sequelize.Op;
 
-//Create and Save a new Car
-exports.create = (req, res) => {
-    //Validate request
-    if (!req.body.matricula || !req.body.modelo || !req.body.plazas || !req.body.color || !req.body.ano) {
-        res.status(400).send({
-            message: "Content can not be empty!"
-        });
-        return;
+exports.create = async (req, res) => {
+  try {
+    const body = req.body || {};
+
+    if (!body.id_conductor || !body.marca || !body.modelo || !body.matricula) {
+      return res.status(400).json({ message: "id_conductor, marca, modelo y matricula son obligatorios." });
     }
 
-    Vehiculo.create({
-        matricula: req.body.matricula,
-        modelo: req.body.modelo,
-        plazas: req.body.plazas,
-        color: req.body.color,
-        ano: req.body.ano,
-        filename: req.file ? req.file.filename : ""
+    const vehiculo = await Vehiculo.create({
+      id_conductor: body.id_conductor,
+      marca: body.marca,
+      modelo: body.modelo,
+      matricula: body.matricula,
+      tipo: body.tipo || null,
+      activo: body.activo ?? true
+    });
 
-    })
-        .then(data => res.send(data))
-        .catch(err => res.status(500).send({ message: err.message }));
+    return res.status(201).json(vehiculo);
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error creando vehículo." });
+  }
 };
 
-// Get all Cars
-exports.findAll = (req, res) => {
-    Vehiculo.findAll()
-        .then(data => res.send(data))
-        .catch(err => res.status(500).send({ message: err.message }));
+exports.findAll = async (req, res) => {
+  try {
+    const { id_conductor, matricula, activo } = req.query;
+    const where = {};
+    if (id_conductor) where.id_conductor = id_conductor;
+    if (matricula) where.matricula = matricula;
+    if (activo !== undefined) where.activo = String(activo) === "true";
+
+    const vehiculos = await Vehiculo.findAll({ where });
+    return res.json(vehiculos);
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error listando vehículos." });
+  }
 };
 
-//Get Car by Id
-
-exports.findOne = (req, res) => {
+exports.findOne = async (req, res) => {
+  try {
     const id = req.params.id;
-    console.log("🟢 Buscando vehiculo con id:", id);
-
-    Vehiculo.findByPk(id)
-        .then(data => {
-            if (data) {
-                console.log("Vehiculo encontrado:", data);
-                res.send(data);
-            } else {
-                console.log("⚠️ No existe vehiculo con id:", id);
-                res.status(404).send({ message: `No existe vehiculo con id=${id}` });
-            }
-        })
-        .catch(err => {
-            console.error("❌ Error al buscar vehiculo:", err);
-            res.status(500).send({
-                message: err.message || "Error al obtener vehiculo con id=" + id
-            });
-        });
+    const vehiculo = await Vehiculo.findByPk(id);
+    if (!vehiculo) return res.status(404).json({ message: "Vehículo no encontrado." });
+    return res.json(vehiculo);
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error obteniendo vehículo." });
+  }
 };
 
-//Update Car
-exports.update = (req, res) => {
+exports.update = async (req, res) => {
+  try {
     const id = req.params.id;
-    Vehiculo.update(req.body, { where: { id: id } })
-        .then(num => {
-            if (num == 1) res.send({ message: "Vehiculo actualizado" });
-            else res.send({ message: `No se puede actualizar vehiculo con id=${id}` });
+    const body = req.body || {};
 
-        })
-        .catch(err => {
-            console.error("❌ Error al buscar vehiculo:", err);
-            res.status(500).send({
-                message: err.message || "error al obtener vehiculo con id=" + id
-            });
-        });
+    const vehiculo = await Vehiculo.findByPk(id);
+    if (!vehiculo) return res.status(404).json({ message: "Vehículo no encontrado." });
+
+    await vehiculo.update({
+      marca: body.marca ?? vehiculo.marca,
+      modelo: body.modelo ?? vehiculo.modelo,
+      matricula: body.matricula ?? vehiculo.matricula,
+      tipo: body.tipo ?? vehiculo.tipo,
+      activo: body.activo ?? vehiculo.activo,
+    });
+
+    return res.json(vehiculo);
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error actualizando vehículo." });
+  }
 };
 
-//Delete Employee
-exports.delete = (req, res) => {
+exports.remove = async (req, res) => {
+  try {
     const id = req.params.id;
-    Vehiculo.destroy({ where: { id: id } })
-        .then(num => {
-            if (num == 1) res.send({ message: "Vehiculo eliminado" });
-            else res.send({ message: 'No se pudo eliminar al vehiculo con id=${id}' });
-        })
-        .catch(err => res.status(500).send({ message: err.message }));
+    const vehiculo = await Vehiculo.findByPk(id);
+    if (!vehiculo) return res.status(404).json({ message: "Vehículo no encontrado." });
+
+    await vehiculo.destroy();
+    return res.json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error eliminando vehículo." });
+  }
 };

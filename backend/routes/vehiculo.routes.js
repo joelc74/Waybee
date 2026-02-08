@@ -1,24 +1,22 @@
 module.exports = app => {
   const vehiculo = require("../controllers/vehiculo.controller.js");
-   var upload = require('../multer/upload.js');
+  const upload = require("../middleware/upload.js");
+  const router = require("express").Router();
 
-  var router = require("express").Router();
+  // Create a new vehiculo (opcional: file)
+  router.post("/", upload.single("file"), vehiculo.create);
 
-  //Create a new Car
-  router.post("/",upload.single('file'), vehiculo.create);
-
-  //Retrieve all cars
+  // Retrieve all vehiculos
   router.get("/", vehiculo.findAll);
 
-  //Retrieve a single car with id
+  // Retrieve a single vehiculo with id
   router.get("/:id", vehiculo.findOne);
 
-  //Update a car with id
+  // Update a vehiculo with id
   router.put("/:id", vehiculo.update);
 
-  //Delete a car with id
-  router.delete("/:id", vehiculo.delete);
+  // Delete a vehiculo with id
+  router.delete("/:id", vehiculo.remove);
 
-  app.use('/api/vehiculo', router);
-
+  app.use("/api/vehiculo", router);
 };

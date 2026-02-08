@@ -1,24 +1,22 @@
 module.exports = app => {
   const conductor = require("../controllers/conductor.controller.js");
-   var upload = require('../multer/upload.js');
+  const upload = require("../middleware/upload.js");
+  const router = require("express").Router();
 
-  var router = require("express").Router();
+  // Create a new conductor (opcional: file)
+  router.post("/", upload.single("file"), conductor.create);
 
-  //Create a new driver
-  router.post("/",upload.single('file'), conductor.create);
-
-  //Retrieve all driver
+  // Retrieve all conductores
   router.get("/", conductor.findAll);
 
-  //Retrieve a single driver with id
+  // Retrieve a single conductor with id
   router.get("/:id", conductor.findOne);
 
-  //Update a driver with id
+  // Update a conductor with id
   router.put("/:id", conductor.update);
 
-  //Delete a driver with id
-  router.delete("/:id", conductor.delete);
+  // Delete a conductor with id
+  router.delete("/:id", conductor.remove);
 
-  app.use('/api/conductor', router);
-
+  app.use("/api/conductor", router);
 };

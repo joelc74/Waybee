@@ -1,87 +1,78 @@
-const { where } = require("sequelize");
 const db = require("../models");
 const Pago = db.pago;
-const Op = db.Sequelize.Op;
 
-//Create and Save a new Pay
-exports.create = (req, res) => {
-    //Validate request
-    if (!req.body.tipo_servicio || !req.body.metodo || !req.body.estado || !req.body.monto || !req.body.fecha_pago || !req.body.transaccion_id) {
-        res.status(400).send({
-            message: "Content can not be empty!"
-        });
-        return;
+exports.create = async (req, res) => {
+  try {
+    const body = req.body || {};
+    if (!body.id_servicio || body.importe === undefined || !body.metodo_pago) {
+      return res.status(400).json({ message: "id_servicio, importe y metodo_pago son obligatorios." });
     }
 
-    Pago.create({
-        tipo_servicio: req.body.tipo_servicio,
-        metodo: req.body.metodo,
-        estado: req.body.estado,
-        monto: req.body.monto,
-        fecha_pago: req.body.fecha_pago,
-        transaccion_id: req.body.transaccion_id,
-        filename: req.file ? req.file.filename : ""
+    const pago = await Pago.create({
+      id_servicio: body.id_servicio,
+      importe: body.importe,
+      metodo_pago: body.metodo_pago,
+      estado_pago: body.estado_pago || "pendiente",
+      fecha_pago: body.fecha_pago || null,
+    });
 
-    })
-        .then(data => res.send(data))
-        .catch(err => res.status(500).send({ message: err.message }));
+    return res.status(201).json(pago);
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error creando pago." });
+  }
 };
 
-// Get all Pay
-exports.findAll = (req, res) => {
-    Pago.findAll()
-        .then(data => res.send(data))
-        .catch(err => res.status(500).send({ message: err.message }));
+exports.findAll = async (req, res) => {
+  try {
+    const { id_servicio, estado_pago } = req.query;
+    const where = {};
+    if (id_servicio) where.id_servicio = id_servicio;
+    if (estado_pago) where.estado_pago = estado_pago;
+
+    const pagos = await Pago.findAll({ where });
+    return res.json(pagos);
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error listando pagos." });
+  }
 };
 
-//Get Pay by Id
-
-exports.findOne = (req, res) => {
-    const id = req.params.id;
-    console.log("🟢 Buscando Pago con id:", id);
-
-    Pago.findByPk(id)
-        .then(data => {
-            if (data) {
-                console.log("📦 Pago encontrado:", data);
-                res.send(data);
-            } else {
-                console.log("⚠️ No existe Pago con id:", id);
-                res.status(404).send({ message: `No existe Pago con id=${id}` });
-            }
-        })
-        .catch(err => {
-            console.error("❌ Error al buscar Pago:", err);
-            res.status(500).send({
-                message: err.message || "Error al obtener el Pago con id=" + id
-            });
-        });
+exports.findOne = async (req, res) => {
+  try {
+    const pago = await Pago.findByPk(req.params.id);
+    if (!pago) return res.status(404).json({ message: "Pago no encontrado." });
+    return res.json(pago);
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error obteniendo pago." });
+  }
 };
 
-//Update Pay
-exports.update = (req, res) => {
-    const id = req.params.id;
-    Pago.update(req.body, { where: { id: id } })
-        .then(num => {
-            if (num == 1) res.send({ message: "Pago actualizado" });
-            else res.send({ message: `No se puede actualizar el pago con id=${id}` });
+exports.update = async (req, res) => {
+  try {
+    const pago = await Pago.findByPk(req.params.id);
+    if (!pago) return res.status(404).json({ message: "Pago no encontrado." });
 
-        })
-        .catch(err => {
-            console.error("❌ Error al buscar pago:", err);
-            res.status(500).send({
-                message: err.message || "error al obtener pago con id=" + id
-            });
-        });
+    const body = req.body || {};
+    await pago.update({
+      importe: body.importe ?? pago.importe,
+      metodo_pago: body.metodo_pago ?? pago.metodo_pago,
+      estado_pago: body.estado_pago ?? pago.estado_pago,
+      fecha_pago: body.fecha_pago ?? pago.fecha_pago,
+    });
+
+    return res.json(pago);
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error actualizando pago." });
+  }
 };
 
-//Delete Pay
-exports.delete = (req, res) => {
-    const id = req.params.id;
-    Pago.destroy({ where: { id: id } })
-        .then(num => {
-            if (num == 1) res.send({ message: "Pago eliminado" });
-            else res.send({ message: 'No se pudo eliminar el pago con id=${id}' });
-        })
-        .catch(err => res.status(500).send({ message: err.message }));
+exports.remove = async (req, res) => {
+  try {
+    const pago = await Pago.findByPk(req.params.id);
+    if (!pago) return res.status(404).json({ message: "Pago no encontrado." });
+
+    await pago.destroy();
+    return res.json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ message: e.message || "Error eliminando pago." });
+  }
 };
