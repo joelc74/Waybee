@@ -26,7 +26,7 @@ exports.create = async (req, res) => {
       telefono: body.telefono || null,
       activo: body.activo ?? true,
       password_hash,
-      rol: body.rol || "user",
+      rol: "user",
       // fecha_registro default en modelo
     });
 

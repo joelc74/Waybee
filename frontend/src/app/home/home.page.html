@@ -13,6 +13,16 @@
           <ion-icon name="notifications"></ion-icon>
         </ion-button>
 
+        <!-- ✅ Cerrar sesión -->
+        <ion-button
+          fill="clear"
+          class="wb-logout"
+          aria-label="Cerrar sesión"
+          (click)="logout()"
+        >
+          <ion-icon name="log-out-outline"></ion-icon>
+        </ion-button>
+
         <!-- Usuario (solo informativo, sin acción) -->
         <div class="wb-user" aria-label="Usuario">
           <ion-icon name="person"></ion-icon>

@@ -1,3 +1,4 @@
+// backend/models/usuario.model.js
 
 module.exports = (sequelize, Sequelize) => {
   const Usuario = sequelize.define("usuario", {
@@ -28,7 +29,6 @@ module.exports = (sequelize, Sequelize) => {
     password_hash: {
       type: Sequelize.STRING(255),
       allowNull: false
-      // Si en el futuro quieres "login social", lo ponemos allowNull:true
     },
     fecha_registro: {
       type: Sequelize.DATE,
@@ -39,7 +39,14 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.ENUM("user", "driver", "admin"),
       allowNull: false,
       defaultValue: "user"
+    },
+
+    // ✅ NUEVO
+    img_profile: {
+      type: Sequelize.STRING(255),
+      allowNull: true
     }
+
   }, {
     tableName: "usuario",
     timestamps: false,

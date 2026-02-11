@@ -1,0 +1,80 @@
+<ion-header class="wb-header" [translucent]="true">
+  <ion-toolbar class="wb-toolbar">
+    <div class="wb-topbar">
+      <div class="wb-logo">
+        <img src="assets/Images/logo/waybee-logo.png" alt="Waybee" />
+      </div>
+
+      <div class="wb-right-icons">
+        <ion-button fill="clear" class="wb-bell" aria-label="Notificaciones">
+          <ion-icon name="notifications"></ion-icon>
+        </ion-button>
+
+        <div class="wb-user" aria-label="Usuario">
+          <ion-icon name="person"></ion-icon>
+        </div>
+      </div>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="wb-content">
+  <div class="wb-auth">
+    <div class="wb-card">
+      <div class="wb-card-title">Iniciar sesión</div>
+      <div class="wb-card-sub">Accede con tu correo y contraseña</div>
+
+      <!-- EMAIL -->
+      <label class="wb-label">Correo electrónico</label>
+      <div class="wb-location-pill wb-input-pill">
+        <ion-icon name="mail-outline" class="wb-loc-icon"></ion-icon>
+
+        <ion-input
+          class="wb-location-input"
+          type="email"
+          inputmode="email"
+          autocomplete="email"
+          placeholder="tu@correo.com"
+          [(ngModel)]="email"
+        ></ion-input>
+      </div>
+
+      <!-- PASSWORD -->
+      <label class="wb-label">Contraseña</label>
+      <div class="wb-location-pill wb-input-pill">
+        <ion-icon name="lock-closed-outline" class="wb-loc-icon"></ion-icon>
+
+        <ion-input
+          class="wb-location-input"
+          type="password"
+          autocomplete="current-password"
+          placeholder="••••••••"
+          [(ngModel)]="password"
+        ></ion-input>
+      </div>
+
+      <!-- ERROR -->
+      <div class="wb-error" *ngIf="error">{{ error }}</div>
+
+      <!-- CTA -->
+      <button class="wb-cta wb-cta-full" type="button" (click)="doLogin()" [disabled]="loading">
+        <span *ngIf="!loading">Entrar</span>
+        <span *ngIf="loading">Entrando…</span>
+      </button>
+
+      <!-- LINKS -->
+      <button class="wb-link" type="button" (click)="goRegister()">
+        Crear cuenta (solo usuarios)
+      </button>
+
+      <div class="wb-divider"></div>
+
+      <div class="wb-help">
+        <div class="wb-help-title">¿Quieres trabajar con nosotros como conductor?</div>
+        <div class="wb-help-sub">
+          Escríbenos a <strong>drivers@waybee.es</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>

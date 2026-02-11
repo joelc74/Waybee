@@ -1,4 +1,7 @@
 import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
+import { Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+
 import * as L from 'leaflet';
 import 'leaflet-routing-machine';
 
@@ -32,6 +35,20 @@ type NominatimResult = {
   standalone: false,
 })
 export class HomePage implements AfterViewInit {
+
+  constructor(
+    private auth: AuthService,
+    private router: Router
+  ) {}
+
+  /* =========================
+     LOGOUT
+     ========================= */
+  logout(): void {
+    this.auth.logout();
+    this.router.navigateByUrl('/login', { replaceUrl: true });
+  }
+
   /* =========================
      TARIFA (VIAJE)
      ========================= */

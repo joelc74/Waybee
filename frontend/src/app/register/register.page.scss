@@ -1,0 +1,226 @@
+:host {
+  --wb-yellow: #f7c400;
+  --wb-black: #111111;
+  --wb-sheet: #ffffff;
+}
+
+.wb-header { --background: transparent; }
+
+.wb-toolbar {
+  --background: var(--wb-yellow);
+  padding: 10px 12px 12px;
+}
+
+.wb-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wb-logo { display: flex; align-items: center; }
+
+.wb-logo img {
+  height: 34px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.wb-right-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wb-bell { --color: #000; font-size: 22px; }
+
+.wb-user {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #000;
+  display: grid;
+  place-items: center;
+}
+
+.wb-user ion-icon { color: #fff; font-size: 18px; }
+
+.wb-content { --background: #f3f3f3; }
+
+.wb-auth {
+  min-height: calc(100vh - 80px);
+  display: grid;
+  place-items: center;
+  padding: 18px 14px 26px;
+}
+
+.wb-card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--wb-sheet);
+  border-radius: 18px;
+  padding: 18px 16px 16px;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.12);
+}
+
+.wb-card-title {
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  font-size: 20px;
+  color: #111;
+}
+
+.wb-card-sub {
+  margin-top: 6px;
+  font-size: 13px;
+  color: rgba(17,17,17,0.65);
+  margin-bottom: 14px;
+}
+
+.wb-note {
+  font-size: 13px;
+  font-weight: 800;
+  color: rgba(17,17,17,0.75);
+  padding: 12px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(17,17,17,0.10);
+  background: rgba(247,196,0,0.18);
+}
+
+/* LABELS */
+.wb-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(17,17,17,0.75);
+  margin: 12px 2px 6px;
+}
+
+/* INPUT PILL */
+.wb-location-pill {
+  background: #fff;
+  border-radius: 14px;
+  padding: 10px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(17,17,17,0.10);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+}
+
+.wb-loc-icon {
+  font-size: 18px;
+  color: rgba(17,17,17,0.75);
+}
+
+.wb-location-input {
+  flex: 1;
+  font-size: 15px;
+  --padding-top: 0px;
+  --padding-bottom: 0px;
+  --padding-start: 0px;
+  --padding-end: 0px;
+  color: #111;
+}
+
+.wb-error {
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #b00020;
+}
+
+.wb-ok {
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #1b7f2a;
+}
+
+/* CTA */
+.wb-cta {
+  width: 100%;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 14px;
+  padding: 14px 14px;
+  background: var(--wb-yellow);
+  color: #000;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.15);
+}
+
+.wb-cta:disabled {
+  opacity: 0.6;
+}
+
+.wb-link {
+  width: 100%;
+  margin-top: 10px;
+  border: 0;
+  background: transparent;
+  color: rgba(17,17,17,0.75);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 10px 8px;
+}
+
+.wb-divider {
+  height: 1px;
+  background: rgba(17,17,17,0.10);
+  margin: 14px 0 12px;
+}
+
+.wb-help {
+  text-align: center;
+  padding: 4px 6px;
+}
+
+.wb-help-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: rgba(17,17,17,0.75);
+}
+
+.wb-help-sub {
+  margin-top: 4px;
+  font-size: 13px;
+  color: rgba(17,17,17,0.65);
+}
+
+/* ✅ FOTO PERFIL (integrado en pill Waybee) */
+.wb-photo-pill{
+  align-items: center;
+  gap: 8px;
+}
+
+.wb-photo-inline{
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+}
+
+.wb-photo-placeholder{
+  font-size: 14px;
+  opacity: .75;
+}
+
+.wb-photo-img{
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  object-fit: cover;
+  display: block;
+  background: rgba(0,0,0,0.06);
+}
+
+.wb-photo-btn{
+  --padding-start: 6px;
+  --padding-end: 6px;
+  height: 34px;
+}

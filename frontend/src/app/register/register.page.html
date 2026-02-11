@@ -1,0 +1,152 @@
+<ion-header class="wb-header" [translucent]="true">
+  <ion-toolbar class="wb-toolbar">
+    <div class="wb-topbar">
+      <div class="wb-logo">
+        <img src="assets/Images/logo/waybee-logo-gris.png" alt="Waybee" />
+      </div>
+
+      <div class="wb-right-icons">
+        <ion-button fill="clear" class="wb-bell" aria-label="Notificaciones">
+          <ion-icon name="notifications"></ion-icon>
+        </ion-button>
+
+        <div class="wb-user" aria-label="Usuario">
+          <ion-icon name="person"></ion-icon>
+        </div>
+      </div>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="wb-content">
+  <div class="wb-auth">
+    <div class="wb-card">
+      <div class="wb-card-title">Crear cuenta</div>
+      <div class="wb-card-sub">Registro solo para usuarios</div>
+
+      <div class="wb-note">
+        Conductores por alta manual.
+      </div>
+
+      <!-- ✅ FOTO PERFIL (opcional) - MISMO ESTILO WAYBEE -->
+      <label class="wb-label">Foto de perfil (opcional)</label>
+      <div class="wb-location-pill wb-input-pill wb-photo-pill">
+        <ion-icon name="image-outline" class="wb-loc-icon"></ion-icon>
+
+        <div class="wb-photo-inline">
+          <img *ngIf="photoPreview" [src]="photoPreview" alt="Foto" class="wb-photo-img" />
+          <div *ngIf="!photoPreview" class="wb-photo-placeholder">Sin foto</div>
+        </div>
+
+        <ion-button fill="clear" class="wb-photo-btn" (click)="openFilePicker()" aria-label="Galería">
+          <ion-icon name="images-outline"></ion-icon>
+        </ion-button>
+
+        <ion-button fill="clear" class="wb-photo-btn" (click)="takePhoto()" aria-label="Cámara">
+          <ion-icon name="camera-outline"></ion-icon>
+        </ion-button>
+
+        <ion-button fill="clear" class="wb-photo-btn" (click)="removePhoto()" aria-label="Quitar" *ngIf="photoPreview">
+          <ion-icon name="trash-outline"></ion-icon>
+        </ion-button>
+
+        <input #fileInput type="file" accept="image/*" hidden (change)="onFileSelected($event)" />
+      </div>
+
+      <!-- NOMBRE -->
+      <label class="wb-label">Nombre y apellidos</label>
+      <div class="wb-location-pill wb-input-pill">
+        <ion-icon name="person-outline" class="wb-loc-icon"></ion-icon>
+
+        <ion-input
+          class="wb-location-input"
+          type="text"
+          autocomplete="name"
+          placeholder="Tu nombre"
+          [(ngModel)]="nombre"
+        ></ion-input>
+      </div>
+
+      <!-- EMAIL -->
+      <label class="wb-label">Correo electrónico</label>
+      <div class="wb-location-pill wb-input-pill">
+        <ion-icon name="mail-outline" class="wb-loc-icon"></ion-icon>
+
+        <ion-input
+          class="wb-location-input"
+          type="email"
+          inputmode="email"
+          autocomplete="email"
+          placeholder="tu@correo.com"
+          [(ngModel)]="email"
+        ></ion-input>
+      </div>
+
+      <!-- TELÉFONO -->
+      <label class="wb-label">Teléfono</label>
+      <div class="wb-location-pill wb-input-pill">
+        <ion-icon name="call-outline" class="wb-loc-icon"></ion-icon>
+
+        <ion-input
+          class="wb-location-input"
+          type="tel"
+          inputmode="tel"
+          autocomplete="tel"
+          placeholder="600000000"
+          [(ngModel)]="telefono"
+        ></ion-input>
+      </div>
+
+      <!-- PASSWORD -->
+      <label class="wb-label">Contraseña</label>
+      <div class="wb-location-pill wb-input-pill">
+        <ion-icon name="lock-closed-outline" class="wb-loc-icon"></ion-icon>
+
+        <ion-input
+          class="wb-location-input"
+          type="password"
+          autocomplete="new-password"
+          placeholder="Mínimo 4 caracteres"
+          [(ngModel)]="password"
+        ></ion-input>
+      </div>
+
+      <!-- CONFIRM -->
+      <label class="wb-label">Repite la contraseña</label>
+      <div class="wb-location-pill wb-input-pill">
+        <ion-icon name="lock-closed-outline" class="wb-loc-icon"></ion-icon>
+
+        <ion-input
+          class="wb-location-input"
+          type="password"
+          autocomplete="new-password"
+          placeholder="Repite la contraseña"
+          [(ngModel)]="password2"
+        ></ion-input>
+      </div>
+
+      <!-- MENSAJES -->
+      <div class="wb-error" *ngIf="error">{{ error }}</div>
+      <div class="wb-ok" *ngIf="okMsg">{{ okMsg }}</div>
+
+      <!-- CTA -->
+      <button class="wb-cta wb-cta-full" type="button" (click)="doRegister()" [disabled]="loading">
+        <span *ngIf="!loading">Crear cuenta</span>
+        <span *ngIf="loading">Creando…</span>
+      </button>
+
+      <button class="wb-link" type="button" (click)="goLogin()">
+        Volver a login
+      </button>
+
+      <div class="wb-divider"></div>
+
+      <div class="wb-help">
+        <div class="wb-help-title">¿Quieres trabajar con nosotros como conductor?</div>
+        <div class="wb-help-sub">
+          Escríbenos a <strong>drivers@waybee.es</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>
