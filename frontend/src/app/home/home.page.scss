@@ -48,7 +48,6 @@
   margin: 0;
 }
 
-
 .wb-bell { --color: #000; font-size: 22px; }
 
 /* ✅ Logout (mismo look que campana) */
@@ -66,6 +65,15 @@
 .wb-user ion-icon{
   color: #fff;
   font-size: 18px;
+}
+
+/* ✅ ÚNICO AÑADIDO para que la foto encaje sin cambiar el diseño */
+.wb-user img{
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  object-fit: cover;
+  display: block;
 }
 
 /* Ubicación / buscador */

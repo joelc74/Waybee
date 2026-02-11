@@ -62,6 +62,14 @@ export class HomePage implements AfterViewInit {
   logoSrc = 'assets/Images/logo/waybee-logo.png';
   selectedService: ServiceMode = 'viaje';
 
+  // ✅ AÑADIDO: URL de foto perfil
+  profileImgUrl: string | null = null;
+
+  // ✅ AÑADIDO: si falla la carga, volvemos al icono
+  onProfileImgError(): void {
+    this.profileImgUrl = null;
+  }
+
   /* =========================
      ORIGEN
      ========================= */
@@ -117,6 +125,9 @@ export class HomePage implements AfterViewInit {
   private destTimer: any = null;
 
   ngAfterViewInit(): void {
+    // ✅ AÑADIDO: cargar URL de foto perfil desde AuthService
+    this.profileImgUrl = this.auth.getProfileImageUrl();
+
     this.initMap();
     setTimeout(() => this.map.invalidateSize(), 250);
   }
