@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from 'src/environments/environment';
 import { AuthService } from './auth.service';
 
 export type favorito = {
@@ -27,7 +28,6 @@ export type favorito_create_payload = {
   destino_lng: number;
 };
 
-// ✅ ESTE ES EL QUE HOME ESTÁ IMPORTANDO
 export type FavoritoCreateResponse = {
   id: number;
   message?: string;
@@ -35,15 +35,21 @@ export type FavoritoCreateResponse = {
 
 @Injectable({ providedIn: 'root' })
 export class FavoritosService {
-  private readonly api = 'http://localhost:8080/favoritos';
+  // ✅ MISMO patrón que tu AuthService: environment.apiUrl + path
+  private readonly api = `${environment.apiUrl.replace(/\/$/, '')}/favorito`;
 
   constructor(private http: HttpClient, private auth: AuthService) {}
 
   private headers(): HttpHeaders {
-    const token = (this.auth as any).getToken?.() as string || '';
+    const token = this.auth.getToken(); // ✅ REAL, existe en tu AuthService
+    if (!token) {
+      // Sin token -> el backend te va a dar 401 sí o sí.
+      return new HttpHeaders({ 'Content-Type': 'application/json' });
+    }
+
     return new HttpHeaders({
       'Content-Type': 'application/json',
-      Authorization: token ? `Bearer ${token}` : '',
+      Authorization: `Bearer ${token}`,
     });
   }
 

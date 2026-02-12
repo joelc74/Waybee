@@ -9,6 +9,7 @@ import { FavoritosService, favorito } from '../services/favoritos.service';
   styleUrls: ['./favoritos.page.scss'],
   standalone: false,
 })
+
 export class FavoritosPage {
   logoSrc = 'assets/Images/logo/waybee-logo.png';
 
@@ -24,7 +25,7 @@ export class FavoritosPage {
     private router: Router,
     private auth: AuthService,
     private favService: FavoritosService
-  ) {}
+  ) { }
 
   ionViewWillEnter(): void {
     this.loadProfileImage();
@@ -56,9 +57,10 @@ export class FavoritosPage {
       error: (err) => {
         console.error('❌ Error cargando favoritos:', err);
         this.favoritos = [];
-        this.error = 'No se pudieron cargar los favoritos.';
+        this.error = err?.error?.message || err?.message || 'No se pudieron cargar los favoritos.';
         this.loading = false;
       },
+
     });
   }
 
