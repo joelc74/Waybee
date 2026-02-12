@@ -1,7 +1,5 @@
-// backend/models/usuario.model.js
-
 module.exports = (sequelize, Sequelize) => {
-  const Usuario = sequelize.define("usuario", {
+  const usuario = sequelize.define("usuario", {
     id_usuario: {
       type: Sequelize.INTEGER,
       autoIncrement: true,
@@ -40,13 +38,10 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: false,
       defaultValue: "user"
     },
-
-    // ✅ NUEVO
     img_profile: {
       type: Sequelize.STRING(255),
       allowNull: true
     }
-
   }, {
     tableName: "usuario",
     timestamps: false,
@@ -56,11 +51,19 @@ module.exports = (sequelize, Sequelize) => {
     ]
   });
 
-  Usuario.associate = (db) => {
-    Usuario.hasOne(db.conductor, { foreignKey: "id_usuario", as: "conductor" });
-    Usuario.hasMany(db.servicio, { foreignKey: "id_usuario", as: "servicios" });
-    Usuario.hasMany(db.valoracion, { foreignKey: "id_usuario", as: "valoraciones_emitidas" });
+  usuario.associate = (db) => {
+    usuario.hasOne(db.conductor, { foreignKey: "id_usuario", as: "conductor" });
+    usuario.hasMany(db.servicio, { foreignKey: "id_usuario", as: "servicios" });
+    usuario.hasMany(db.valoracion, { foreignKey: "id_usuario", as: "valoraciones_emitidas" });
+
+    // ✅ FAVORITOS
+    usuario.hasMany(db.favorito, {
+      foreignKey: "id_usuario",
+      as: "favoritos",
+      onDelete: "CASCADE",
+      onUpdate: "CASCADE"
+    });
   };
 
-  return Usuario;
+  return usuario;
 };

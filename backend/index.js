@@ -22,6 +22,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
 // ✅ Sync BD (DEV)
 db.sequelize.sync({ alter: true })
   .then(() => console.log("✅ Base de datos sincronizada"))
@@ -40,6 +41,8 @@ require("./routes/vehiculo.routes")(app);
 require("./routes/servicio.routes")(app); // 👈 NUEVA (pool + accept + estados)
 require("./routes/pago.routes")(app);
 require("./routes/valoracion.routes")(app);
+app.use('/favorito', require('./routes/favorito.routes'));
+
 
 // ✅ Manejador de errores (incluye Multer)
 app.use((err, req, res, next) => {

@@ -1,6 +1,7 @@
 import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { FavoritosService, FavoritoCreateResponse } from '../services/favoritos.service';
 
 import * as L from 'leaflet';
 import 'leaflet-routing-machine';
@@ -38,8 +39,35 @@ export class HomePage implements AfterViewInit {
 
   constructor(
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    private favoritosService: FavoritosService
   ) {}
+
+  /* =========================
+     PERFIL IMG
+     ========================= */
+  profileImgUrl: string | null = null;
+
+  private loadProfileImage(): void {
+    const u: any = this.auth.getUser?.() || null;
+    const img = u?.img_profile || u?.imgProfile || null;
+
+    if (img) {
+      const cleaned = String(img).replace(/^\/+/, '');
+      const path = cleaned.startsWith('images/')
+        ? cleaned
+        : (cleaned.startsWith('public/images/') ? cleaned.replace('public/', '') : cleaned);
+
+      const finalPath = path.startsWith('images/') ? `/${path}` : `/images/${path}`;
+      this.profileImgUrl = `http://localhost:8080${finalPath}`;
+    } else {
+      this.profileImgUrl = null;
+    }
+  }
+
+  onProfileImgError(): void {
+    this.profileImgUrl = null;
+  }
 
   /* =========================
      LOGOUT
@@ -61,14 +89,6 @@ export class HomePage implements AfterViewInit {
      ========================= */
   logoSrc = 'assets/Images/logo/waybee-logo.png';
   selectedService: ServiceMode = 'viaje';
-
-  // ✅ AÑADIDO: URL de foto perfil
-  profileImgUrl: string | null = null;
-
-  // ✅ AÑADIDO: si falla la carga, volvemos al icono
-  onProfileImgError(): void {
-    this.profileImgUrl = null;
-  }
 
   /* =========================
      ORIGEN
@@ -99,13 +119,78 @@ export class HomePage implements AfterViewInit {
   distanceLabel = '';
   priceLabel = '';
 
-  // ✅ valores numéricos para habilitar el CTA
   lastKm = 0;
   lastPrice = 0;
 
-  // ✅ habilita el botón solo cuando hay ruta calculada (y estamos en viaje)
   get canPay(): boolean {
     return this.selectedService === 'viaje' && this.lastKm > 0 && this.lastPrice > 0;
+  }
+
+  /* =========================
+     FAVORITOS (HOME)
+     ========================= */
+  isFav = false;
+  favBusy = false;
+  lastFavId: number | null = null;
+
+  private buildTituloFavorito(): string {
+    const o = (this.locationQuery || '').trim();
+    const d = (this.destQuery || '').trim();
+    if (o && d) return `${o} → ${d}`;
+    if (d) return `Destino: ${d}`;
+    return 'Favorito';
+  }
+
+  toggleFavorite(): void {
+    if (this.favBusy) return;
+    if (!this.canPay) return; // solo cuando hay ruta calculada
+
+    this.favBusy = true;
+
+    // si ya es favorito -> borrar
+    if (this.isFav && this.lastFavId) {
+      const id = this.lastFavId;
+      this.favoritosService.remove(id).subscribe({
+        next: () => {
+          this.isFav = false;
+          this.lastFavId = null;
+          this.favBusy = false;
+        },
+        error: (err: unknown) => {
+          console.error('❌ Error al borrar favorito', err);
+          this.favBusy = false;
+        }
+      });
+      return;
+    }
+
+    // ✅ crear (tabla normalizada: NO JSON, NO "ruta")
+    if (!this.originLatLng || !this.destLatLng) {
+      this.favBusy = false;
+      return;
+    }
+
+    const payload = {
+      titulo: this.buildTituloFavorito(),
+      origen_direccion: (this.locationQuery || '').trim(),
+      origen_lat: Number(this.originLatLng.lat),
+      origen_lng: Number(this.originLatLng.lng),
+      destino_direccion: (this.destQuery || '').trim(),
+      destino_lat: Number(this.destLatLng.lat),
+      destino_lng: Number(this.destLatLng.lng),
+    };
+
+    this.favoritosService.create(payload).subscribe({
+      next: (created: FavoritoCreateResponse) => {
+        this.isFav = true;
+        this.lastFavId = Number(created?.id) || null;
+        this.favBusy = false;
+      },
+      error: (err: unknown) => {
+        console.error('❌ Error al guardar favorito', err);
+        this.favBusy = false;
+      }
+    });
   }
 
   /* =========================
@@ -125,11 +210,17 @@ export class HomePage implements AfterViewInit {
   private destTimer: any = null;
 
   ngAfterViewInit(): void {
-    // ✅ AÑADIDO: cargar URL de foto perfil desde AuthService
-    this.profileImgUrl = this.auth.getProfileImageUrl();
-
     this.initMap();
     setTimeout(() => this.map.invalidateSize(), 250);
+    this.loadProfileImage();
+  }
+
+  // ✅ clave para Ionic: al volver a la pantalla, Leaflet necesita resize
+  ionViewDidEnter(): void {
+    this.loadProfileImage();
+    if (this.map) {
+      setTimeout(() => this.map.invalidateSize(), 150);
+    }
   }
 
   private initMap(): void {
@@ -140,8 +231,6 @@ export class HomePage implements AfterViewInit {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors',
     }).addTo(this.map);
-
-    // Si NO quieres marcador inicial, deja originLatLng undefined y no lo pintes aquí.
   }
 
   /* =========================
@@ -255,6 +344,8 @@ export class HomePage implements AfterViewInit {
 
     this.clearRouteOnly();
     this.clearFarePanel();
+    this.isFav = false;
+    this.lastFavId = null;
   }
 
   selectSuggestion(s: NominatimResult): void {
@@ -334,6 +425,8 @@ export class HomePage implements AfterViewInit {
 
     this.clearRouteOnly();
     this.clearFarePanel();
+    this.isFav = false;
+    this.lastFavId = null;
   }
 
   selectDestSuggestion(s: NominatimResult): void {
@@ -466,7 +559,6 @@ export class HomePage implements AfterViewInit {
   private buildRoute(): void {
     if (!this.originLatLng || !this.destLatLng) return;
 
-    // limpiar ruta anterior
     this.clearRouteOnly();
 
     const lineOptions = {
@@ -496,7 +588,6 @@ export class HomePage implements AfterViewInit {
 
     this.routeControl = (L as any).Routing.control(opts).addTo(this.map);
 
-    // oculta panel instrucciones (por si Leaflet lo mete igual)
     setTimeout(() => {
       const c1 = document.querySelector('.leaflet-routing-container') as HTMLElement | null;
       if (c1) c1.style.display = 'none';
@@ -511,6 +602,9 @@ export class HomePage implements AfterViewInit {
       if (typeof meters === 'number') {
         const km = meters / 1000;
         this.updateFarePanel(km);
+
+        this.isFav = false;
+        this.lastFavId = null;
       }
     });
   }
@@ -546,7 +640,6 @@ export class HomePage implements AfterViewInit {
   payTrip(): void {
     if (!this.canPay) return;
 
-    // Por ahora mock. Luego lo conectas con backend/pasarela.
     console.log('✅ Aceptar trayecto', {
       origen: this.locationQuery,
       destino: this.destQuery,
@@ -563,7 +656,10 @@ export class HomePage implements AfterViewInit {
     this.selectedService = mode;
   }
 
-  goFavorites(): void { console.log('Favoritos'); }
+  goFavorites(): void {
+    this.router.navigateByUrl('/favoritos');
+  }
+
   goHistory(): void { console.log('Historial'); }
   goAccount(): void { console.log('Mi cuenta'); }
 }

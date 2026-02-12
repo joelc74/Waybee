@@ -1,0 +1,68 @@
+<ion-header class="wb-header" [translucent]="true">
+  <ion-toolbar class="wb-toolbar">
+    <div class="wb-topbar">
+      <div class="wb-left">
+        <ion-button fill="clear" class="wb-back" aria-label="Volver" (click)="goBack()">
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </ion-button>
+
+        <div class="wb-logo">
+          <img [src]="logoSrc" alt="Waybee" (error)="null" />
+        </div>
+      </div>
+
+      <div class="wb-right-icons">
+        <ion-button fill="clear" class="wb-bell" aria-label="Notificaciones">
+          <ion-icon name="notifications"></ion-icon>
+        </ion-button>
+
+        <ion-button fill="clear" class="wb-logout" aria-label="Cerrar sesión" (click)="logout()">
+          <ion-icon name="log-out-outline"></ion-icon>
+        </ion-button>
+
+        <div class="wb-user" aria-label="Usuario">
+          <ng-container *ngIf="profileImgUrl; else defaultUser">
+            <img [src]="profileImgUrl" alt="Perfil" />
+          </ng-container>
+          <ng-template #defaultUser>
+            <ion-icon name="person"></ion-icon>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="wb-content">
+  <div class="wb-page">
+    <div class="wb-title">Favoritos</div>
+
+    <div class="wb-card" *ngIf="loading">
+      Cargando…
+    </div>
+
+    <div class="wb-card wb-error" *ngIf="!loading && error">
+      {{ error }}
+    </div>
+
+    <div class="wb-card" *ngIf="!loading && !error && favoritos.length === 0">
+      No tienes favoritos todavía.
+    </div>
+
+    <div class="wb-list" *ngIf="!loading && !error && favoritos.length">
+      <div class="wb-item" *ngFor="let f of favoritos">
+        <div class="wb-item-main">
+          <div class="wb-item-title">{{ f.titulo }}</div>
+          <div class="wb-item-sub">
+            <div class="wb-item-row"><strong>Origen:</strong> {{ f.origen_direccion }}</div>
+            <div class="wb-item-row"><strong>Destino:</strong> {{ f.destino_direccion }}</div>
+          </div>
+        </div>
+
+        <ion-button fill="clear" class="wb-item-del" aria-label="Eliminar" (click)="deleteFavorito(f, $event)">
+          <ion-icon name="trash-outline"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
+  </div>
+</ion-content>

@@ -114,6 +114,7 @@
       </ng-container>
 
       <ng-template #destInputTpl>
+
         <!-- ✅ PANEL flotante (distancia + precio) + CTA -->
         <div class="wb-fare" *ngIf="distanceLabel && priceLabel">
           <div class="wb-fare-left">
@@ -121,16 +122,29 @@
             <div class="wb-fare-row wb-fare-strong">{{ priceLabel }}</div>
           </div>
 
-          <button
-            class="wb-pay"
-            type="button"
-            [disabled]="!canPay"
-            (click)="payTrip()"
-            aria-label="Aceptar y pagar"
-          >
-            <ion-icon name="card-outline"></ion-icon>
-            <span>Pagar</span>
-          </button>
+          <!-- ✅ acciones derecha: fav + pagar -->
+          <div class="wb-fare-actions">
+            <ion-button
+              fill="clear"
+              class="wb-fav-btn"
+              [disabled]="favBusy"
+              (click)="toggleFavorite()"
+              aria-label="Guardar favorito"
+            >
+              <ion-icon [name]="isFav ? 'heart' : 'heart-outline'"></ion-icon>
+            </ion-button>
+
+            <button
+              class="wb-pay"
+              type="button"
+              [disabled]="!canPay"
+              (click)="payTrip()"
+              aria-label="Aceptar y pagar"
+            >
+              <ion-icon name="card-outline"></ion-icon>
+              <span>Pagar</span>
+            </button>
+          </div>
         </div>
 
         <!-- INPUT DESTINO -->

@@ -7,6 +7,12 @@ import { RoleGuard } from './guards/role.guard';
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
 
+  // Favoritos
+   {
+    path: 'favoritos',
+    loadChildren: () => import('./favoritos/favoritos.module').then(m => m.FavoritosPageModule)
+  },
+
   {
     path: 'login',
     loadChildren: () => import('./login/login.module').then(m => m.LoginPageModule),
@@ -32,7 +38,9 @@ const routes: Routes = [
     data: { roles: ['driver', 'admin'] }
   },
 
-  { path: '**', redirectTo: 'login' }
+  { path: '**', redirectTo: 'login' },
+
+
 ];
 
 @NgModule({
