@@ -41,7 +41,7 @@ require("./routes/vehiculo.routes")(app);
 require("./routes/servicio.routes")(app); // 👈 NUEVA (pool + accept + estados)
 require("./routes/pago.routes")(app);
 require("./routes/valoracion.routes")(app);
-app.use('/favorito', require('./routes/favorito.routes'));
+app.use('/favoritos', require('./routes/favorito.routes'));
 
 
 // ✅ Manejador de errores (incluye Multer)

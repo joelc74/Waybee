@@ -1,7 +1,8 @@
+// frontend/src/app/home/home.page.ts
 import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { FavoritosService, FavoritoCreateResponse } from '../services/favoritos.service';
+import { FavoritosService, Favorito } from '../services/favoritos.service';
 
 import * as L from 'leaflet';
 import 'leaflet-routing-machine';
@@ -49,20 +50,7 @@ export class HomePage implements AfterViewInit {
   profileImgUrl: string | null = null;
 
   private loadProfileImage(): void {
-    const u: any = this.auth.getUser?.() || null;
-    const img = u?.img_profile || u?.imgProfile || null;
-
-    if (img) {
-      const cleaned = String(img).replace(/^\/+/, '');
-      const path = cleaned.startsWith('images/')
-        ? cleaned
-        : (cleaned.startsWith('public/images/') ? cleaned.replace('public/', '') : cleaned);
-
-      const finalPath = path.startsWith('images/') ? `/${path}` : `/images/${path}`;
-      this.profileImgUrl = `http://localhost:8080${finalPath}`;
-    } else {
-      this.profileImgUrl = null;
-    }
+    this.profileImgUrl = this.auth.getProfileImageUrl();
   }
 
   onProfileImgError(): void {
@@ -118,7 +106,6 @@ export class HomePage implements AfterViewInit {
      ========================= */
   distanceLabel = '';
   priceLabel = '';
-
   lastKm = 0;
   lastPrice = 0;
 
@@ -133,28 +120,29 @@ export class HomePage implements AfterViewInit {
   favBusy = false;
   lastFavId: number | null = null;
 
-  private buildTituloFavorito(): string {
-    const o = (this.locationQuery || '').trim();
-    const d = (this.destQuery || '').trim();
-    if (o && d) return `${o} → ${d}`;
-    if (d) return `Destino: ${d}`;
-    return 'Favorito';
+  showFavNameCard = false;
+  favTitulo = '';
+
+  onFavTituloInput(ev: any): void {
+    this.favTitulo = (ev?.target?.value ?? '').toString();
   }
 
-  toggleFavorite(): void {
+  onFavClick(): void {
     if (this.favBusy) return;
-    if (!this.canPay) return; // solo cuando hay ruta calculada
+    if (!this.canPay) return;
 
-    this.favBusy = true;
-
-    // si ya es favorito -> borrar
+    // Si ya es favorito => borrar directo
     if (this.isFav && this.lastFavId) {
+      this.favBusy = true;
       const id = this.lastFavId;
+
       this.favoritosService.remove(id).subscribe({
         next: () => {
           this.isFav = false;
           this.lastFavId = null;
           this.favBusy = false;
+          this.showFavNameCard = false;
+          this.favTitulo = '';
         },
         error: (err: unknown) => {
           console.error('❌ Error al borrar favorito', err);
@@ -164,26 +152,50 @@ export class HomePage implements AfterViewInit {
       return;
     }
 
-    // ✅ crear (tabla normalizada: NO JSON, NO "ruta")
-    if (!this.originLatLng || !this.destLatLng) {
-      this.favBusy = false;
-      return;
+    // Si NO es favorito => pedir nombre
+    this.showFavNameCard = true;
+    if (!this.favTitulo.trim()) {
+      // sugerencia simple (no “por defecto” guardada; solo pre-relleno visual)
+      const o = (this.locationQuery || '').split(',')[0]?.trim() || 'Origen';
+      const d = (this.destQuery || '').split(',')[0]?.trim() || 'Destino';
+      this.favTitulo = `${o} → ${d}`;
     }
+  }
 
+  cancelFavName(): void {
+    this.showFavNameCard = false;
+    this.favTitulo = '';
+  }
+
+  saveFavName(): void {
+    if (this.favBusy) return;
+    if (!this.canPay) return;
+
+    const titulo = this.favTitulo.trim();
+    if (!titulo) return;
+
+    // coords deben existir si hay ruta
     const payload = {
-      titulo: this.buildTituloFavorito(),
-      origen_direccion: (this.locationQuery || '').trim(),
-      origen_lat: Number(this.originLatLng.lat),
-      origen_lng: Number(this.originLatLng.lng),
-      destino_direccion: (this.destQuery || '').trim(),
-      destino_lat: Number(this.destLatLng.lat),
-      destino_lng: Number(this.destLatLng.lng),
+      titulo,
+      origen_direccion: this.locationQuery || '',
+      origen_lat: this.originLatLng?.lat ?? null,
+      origen_lng: this.originLatLng?.lng ?? null,
+      destino_direccion: this.destQuery || '',
+      destino_lat: this.destLatLng?.lat ?? null,
+      destino_lng: this.destLatLng?.lng ?? null,
     };
 
+    this.favBusy = true;
+
     this.favoritosService.create(payload).subscribe({
-      next: (created: FavoritoCreateResponse) => {
+      next: (created: Favorito) => {
         this.isFav = true;
         this.lastFavId = Number(created?.id) || null;
+
+        // ✅ cerrar card
+        this.showFavNameCard = false;
+        this.favTitulo = '';
+
         this.favBusy = false;
       },
       error: (err: unknown) => {
@@ -215,12 +227,19 @@ export class HomePage implements AfterViewInit {
     this.loadProfileImage();
   }
 
-  // ✅ clave para Ionic: al volver a la pantalla, Leaflet necesita resize
   ionViewDidEnter(): void {
     this.loadProfileImage();
-    if (this.map) {
-      setTimeout(() => this.map.invalidateSize(), 150);
+
+    // ✅ si venimos de Favoritos con “Usar”
+    const st: any = history.state;
+    const fav: Favorito | undefined = st?.fav;
+    if (fav && typeof fav === 'object') {
+      this.applyFavorito(fav);
+      // limpiar state para que no reaplique en cada enter
+      history.replaceState({}, '');
     }
+
+    if (this.map) setTimeout(() => this.map.invalidateSize(), 150);
   }
 
   private initMap(): void {
@@ -233,9 +252,6 @@ export class HomePage implements AfterViewInit {
     }).addTo(this.map);
   }
 
-  /* =========================
-     ICONO PIN (inline)
-     ========================= */
   private createPinIcon(type: 'origin' | 'dest'): L.DivIcon {
     const stroke = '#1629d6';
     const fill = '#f7c400';
@@ -279,9 +295,39 @@ export class HomePage implements AfterViewInit {
     }
   }
 
-  /* =========================
-     LOGO
-     ========================= */
+  private applyFavorito(f: Favorito): void {
+    // activar modo destino
+    this.destMode = true;
+
+    this.locationQuery = f.origen_direccion || '';
+    this.destQuery = f.destino_direccion || '';
+
+    const oLat = f.origen_lat;
+    const oLng = f.origen_lng;
+    const dLat = f.destino_lat;
+    const dLng = f.destino_lng;
+
+    if (typeof oLat === 'number' && typeof oLng === 'number') {
+      this.originLatLng = L.latLng(oLat, oLng);
+      this.ensureMarker('origin', this.originLatLng);
+      this.map.setView(this.originLatLng, 15, { animate: true });
+    }
+
+    if (typeof dLat === 'number' && typeof dLng === 'number') {
+      this.destLatLng = L.latLng(dLat, dLng);
+      this.ensureMarker('dest', this.destLatLng);
+    }
+
+    if (this.originLatLng && this.destLatLng) {
+      this.buildRoute();
+      // no forzamos isFav; eso sería otro check opcional
+      this.isFav = false;
+      this.lastFavId = null;
+      this.showFavNameCard = false;
+      this.favTitulo = '';
+    }
+  }
+
   onLogoError(e: any): void {
     console.error('❌ No se pudo cargar el logo:', this.logoSrc, e);
   }
@@ -344,8 +390,12 @@ export class HomePage implements AfterViewInit {
 
     this.clearRouteOnly();
     this.clearFarePanel();
+
+    // favoritos
     this.isFav = false;
     this.lastFavId = null;
+    this.showFavNameCard = false;
+    this.favTitulo = '';
   }
 
   selectSuggestion(s: NominatimResult): void {
@@ -425,8 +475,12 @@ export class HomePage implements AfterViewInit {
 
     this.clearRouteOnly();
     this.clearFarePanel();
+
+    // favoritos
     this.isFav = false;
     this.lastFavId = null;
+    this.showFavNameCard = false;
+    this.favTitulo = '';
   }
 
   selectDestSuggestion(s: NominatimResult): void {
@@ -603,8 +657,11 @@ export class HomePage implements AfterViewInit {
         const km = meters / 1000;
         this.updateFarePanel(km);
 
+        // recalculo => reset fav UI
         this.isFav = false;
         this.lastFavId = null;
+        this.showFavNameCard = false;
+        this.favTitulo = '';
       }
     });
   }
@@ -659,7 +716,7 @@ export class HomePage implements AfterViewInit {
   goFavorites(): void {
     this.router.navigateByUrl('/favoritos');
   }
-
   goHistory(): void { console.log('Historial'); }
   goAccount(): void { console.log('Mi cuenta'); }
 }
+

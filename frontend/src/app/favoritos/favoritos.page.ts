@@ -1,7 +1,8 @@
+// frontend/src/app/favoritos/favoritos.page.ts
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { FavoritosService, favorito } from '../services/favoritos.service';
+import { FavoritosService, Favorito } from '../services/favoritos.service';
 
 @Component({
   selector: 'app-favoritos',
@@ -9,80 +10,79 @@ import { FavoritosService, favorito } from '../services/favoritos.service';
   styleUrls: ['./favoritos.page.scss'],
   standalone: false,
 })
-
 export class FavoritosPage {
-  logoSrc = 'assets/Images/logo/waybee-logo.png';
-
-  loading = false;
-  favoritos: favorito[] = [];
-
-  // ✅ ESTA ES LA QUE TE FALTA (tu HTML la usa)
-  error = '';
-
-  profileImgUrl: string | null = null;
 
   constructor(
-    private router: Router,
     private auth: AuthService,
+    private router: Router,
     private favService: FavoritosService
-  ) { }
+  ) {}
 
-  ionViewWillEnter(): void {
-    this.loadProfileImage();
-    this.loadFavoritos();
+  logoSrc = 'assets/Images/logo/waybee-logo.png';
+
+  profileImgUrl: string | null = null;
+  loading = false;
+  error = '';
+  favoritos: Favorito[] = [];
+
+  ionViewDidEnter(): void {
+    this.profileImgUrl = this.auth.getProfileImageUrl();
+    this.load();
   }
 
-  private loadProfileImage(): void {
-    const u: any = (this.auth as any).getUser?.() || null;
-    const img = u?.img_profile || u?.imgProfile || null;
-
-    if (img) {
-      const cleaned = String(img).replace(/^\/+/, '');
-      const path = cleaned.startsWith('images/') ? cleaned : `images/${cleaned}`;
-      this.profileImgUrl = `http://localhost:8080/${path}`;
-    } else {
-      this.profileImgUrl = null;
-    }
+  onProfileImgError(): void {
+    this.profileImgUrl = null;
   }
 
-  loadFavoritos(): void {
-    this.loading = true;
-    this.error = '';
-
-    this.favService.list().subscribe({
-      next: (list) => {
-        this.favoritos = Array.isArray(list) ? list : [];
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('❌ Error cargando favoritos:', err);
-        this.favoritos = [];
-        this.error = err?.error?.message || err?.message || 'No se pudieron cargar los favoritos.';
-        this.loading = false;
-      },
-
-    });
+  onLogoError(e: any): void {
+    console.error('❌ No se pudo cargar el logo:', this.logoSrc, e);
   }
 
-  deleteFavorito(f: favorito, ev: Event): void {
-    ev.stopPropagation();
-
-    this.favService.remove(f.id).subscribe({
-      next: () => {
-        this.favoritos = this.favoritos.filter(x => x.id !== f.id);
-      },
-      error: (err) => {
-        console.error('❌ Error eliminando favorito:', err);
-      },
-    });
+  logout(): void {
+    this.auth.logout();
+    this.router.navigateByUrl('/login', { replaceUrl: true });
   }
 
   goBack(): void {
     this.router.navigateByUrl('/home');
   }
 
-  logout(): void {
-    this.auth.logout();
-    this.router.navigateByUrl('/login', { replaceUrl: true });
+  load(): void {
+    this.loading = true;
+    this.error = '';
+
+    this.favService.list().subscribe({
+      next: (rows) => {
+        this.favoritos = Array.isArray(rows) ? rows : [];
+        this.loading = false;
+      },
+      error: (err: any) => {
+        console.error('❌ Error cargando favoritos', err);
+        this.error = err?.error?.message || err?.message || 'No se pudieron cargar los favoritos.';
+        this.loading = false;
+      }
+    });
+  }
+
+  deleteFavorito(f: Favorito, ev?: any): void {
+    if (ev?.stopPropagation) ev.stopPropagation();
+
+    const id = Number(f?.id);
+    if (!id) return;
+
+    this.favService.remove(id).subscribe({
+      next: () => {
+        this.favoritos = this.favoritos.filter(x => x.id !== id);
+      },
+      error: (err: any) => {
+        console.error('❌ Error borrando favorito', err);
+        this.error = err?.error?.message || err?.message || 'No se pudo borrar el favorito.';
+      }
+    });
+  }
+
+  useFavorito(f: Favorito): void {
+    // ✅ Volver a Home y pasar la ruta seleccionada
+    this.router.navigateByUrl('/home', { state: { fav: f } });
   }
 }

@@ -1,3 +1,4 @@
+<!-- frontend/src/app/favoritos/favoritos.page.html -->
 <ion-header class="wb-header" [translucent]="true">
   <ion-toolbar class="wb-toolbar">
     <div class="wb-topbar">
@@ -7,7 +8,7 @@
         </ion-button>
 
         <div class="wb-logo">
-          <img [src]="logoSrc" alt="Waybee" (error)="null" />
+          <img [src]="logoSrc" alt="Waybee" (error)="onLogoError($event)" />
         </div>
       </div>
 
@@ -21,10 +22,14 @@
         </ion-button>
 
         <div class="wb-user" aria-label="Usuario">
-          <ng-container *ngIf="profileImgUrl; else defaultUser">
-            <img [src]="profileImgUrl" alt="Perfil" />
-          </ng-container>
-          <ng-template #defaultUser>
+          <img
+            *ngIf="profileImgUrl; else userIconTpl"
+            [src]="profileImgUrl"
+            class="wb-user-img"
+            (error)="onProfileImgError()"
+            alt="Perfil"
+          />
+          <ng-template #userIconTpl>
             <ion-icon name="person"></ion-icon>
           </ng-template>
         </div>
@@ -36,10 +41,6 @@
 <ion-content [fullscreen]="true" class="wb-content">
   <div class="wb-page">
     <div class="wb-title">Favoritos</div>
-
-    <div class="wb-card" *ngIf="loading">
-      Cargando…
-    </div>
 
     <div class="wb-card wb-error" *ngIf="!loading && error">
       {{ error }}
@@ -53,15 +54,19 @@
       <div class="wb-item" *ngFor="let f of favoritos">
         <div class="wb-item-main">
           <div class="wb-item-title">{{ f.titulo }}</div>
-          <div class="wb-item-sub">
-            <div class="wb-item-row"><strong>Origen:</strong> {{ f.origen_direccion }}</div>
-            <div class="wb-item-row"><strong>Destino:</strong> {{ f.destino_direccion }}</div>
-          </div>
+          <div class="wb-item-sub">{{ f.origen_direccion }}</div>
+          <div class="wb-item-sub">{{ f.destino_direccion }}</div>
         </div>
 
-        <ion-button fill="clear" class="wb-item-del" aria-label="Eliminar" (click)="deleteFavorito(f, $event)">
-          <ion-icon name="trash-outline"></ion-icon>
-        </ion-button>
+        <div class="wb-item-actions">
+          <button class="wb-item-use" type="button" (click)="useFavorito(f)">
+            Usar
+          </button>
+
+          <ion-button fill="clear" class="wb-item-del" aria-label="Eliminar" (click)="deleteFavorito(f, $event)">
+            <ion-icon name="trash-outline"></ion-icon>
+          </ion-button>
+        </div>
       </div>
     </div>
   </div>

@@ -1,3 +1,4 @@
+<!-- frontend/src/app/home/home.page.html -->
 <ion-header class="wb-header" [translucent]="true">
   <ion-toolbar class="wb-toolbar">
 
@@ -28,8 +29,9 @@
           <img
             *ngIf="profileImgUrl; else userIconTpl"
             [src]="profileImgUrl"
-            alt="Usuario"
+            class="wb-user-img"
             (error)="onProfileImgError()"
+            alt="Perfil"
           />
           <ng-template #userIconTpl>
             <ion-icon name="person"></ion-icon>
@@ -114,35 +116,52 @@
       </ng-container>
 
       <ng-template #destInputTpl>
-
-        <!-- ✅ PANEL flotante (distancia + precio) + CTA -->
+        <!-- ✅ PANEL flotante (distancia + precio) + ❤️ + CTA -->
         <div class="wb-fare" *ngIf="distanceLabel && priceLabel">
           <div class="wb-fare-left">
             <div class="wb-fare-row">{{ distanceLabel }}</div>
             <div class="wb-fare-row wb-fare-strong">{{ priceLabel }}</div>
           </div>
 
-          <!-- ✅ acciones derecha: fav + pagar -->
-          <div class="wb-fare-actions">
-            <ion-button
-              fill="clear"
-              class="wb-fav-btn"
-              [disabled]="favBusy"
-              (click)="toggleFavorite()"
-              aria-label="Guardar favorito"
-            >
-              <ion-icon [name]="isFav ? 'heart' : 'heart-outline'"></ion-icon>
-            </ion-button>
+          <!-- ✅ CORAZÓN ENTRE DATOS Y PAGAR -->
+          <button
+            class="wb-fav"
+            type="button"
+            [disabled]="!canPay || favBusy"
+            (click)="onFavClick()"
+            aria-label="Guardar favorito"
+          >
+            <ion-icon [name]="isFav ? 'heart' : 'heart-outline'"></ion-icon>
+          </button>
 
-            <button
-              class="wb-pay"
-              type="button"
-              [disabled]="!canPay"
-              (click)="payTrip()"
-              aria-label="Aceptar y pagar"
-            >
-              <ion-icon name="card-outline"></ion-icon>
-              <span>Pagar</span>
+          <button
+            class="wb-pay"
+            type="button"
+            [disabled]="!canPay"
+            (click)="payTrip()"
+            aria-label="Aceptar y pagar"
+          >
+            <ion-icon name="card-outline"></ion-icon>
+            <span>Pagar</span>
+          </button>
+        </div>
+
+        <!-- ✅ CARD NOMBRE RUTA -->
+        <div class="wb-route-name-card" *ngIf="showFavNameCard">
+          <div class="wb-route-name-title">Nombre de la ruta</div>
+
+          <input
+            class="wb-route-name-input"
+            type="text"
+            [value]="favTitulo"
+            (input)="onFavTituloInput($event)"
+            placeholder="Ej: Casa → Trabajo"
+          />
+
+          <div class="wb-route-name-actions">
+            <button class="wb-route-cancel" type="button" (click)="cancelFavName()">Cancelar</button>
+            <button class="wb-route-save" type="button" (click)="saveFavName()" [disabled]="favBusy || !favTitulo.trim()">
+              Guardar
             </button>
           </div>
         </div>
