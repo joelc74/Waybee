@@ -1,11 +1,12 @@
 // frontend/src/app/home/home.page.ts
 import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService } from '../services/auth.service';
-import { FavoritosService, Favorito } from '../services/favoritos.service';
-
 import * as L from 'leaflet';
 import 'leaflet-routing-machine';
+
+import { AuthService } from '../services/auth.service';
+import { FavoritosService, Favorito } from '../services/favoritos.service';
+import { ServicioService, servicio_create_payload, servicio_create_response } from '../services/servicio.service';
 
 type ServiceMode = 'viaje' | 'envio';
 
@@ -32,24 +33,27 @@ type NominatimResult = {
 
 @Component({
   selector: 'app-home',
-  templateUrl: 'home.page.html',
-  styleUrls: ['home.page.scss'],
+  templateUrl: './home.page.html',
+  styleUrls: ['./home.page.scss'],
   standalone: false,
 })
 export class HomePage implements AfterViewInit {
-
   constructor(
     private auth: AuthService,
     private router: Router,
-    private favoritosService: FavoritosService
+    private favoritosService: FavoritosService,
+    private servicioService: ServicioService
   ) {}
 
   /* =========================
-     PERFIL IMG
+     PERFIL + LOGO
      ========================= */
+  logoSrc = 'assets/Images/logo/waybee-logo.png';
   profileImgUrl: string | null = null;
 
-  private loadProfileImage(): void {
+  private refreshProfileImg(): void {
+    // En FavoritosPage usas auth.getProfileImageUrl(), así que lo reutilizo
+    // Si no existiera, te reventaría en compile, pero lo he visto en favoritos.page.ts
     this.profileImgUrl = this.auth.getProfileImageUrl();
   }
 
@@ -57,26 +61,32 @@ export class HomePage implements AfterViewInit {
     this.profileImgUrl = null;
   }
 
-  /* =========================
-     LOGOUT
-     ========================= */
+  onLogoError(e: any): void {
+    console.error('❌ No se pudo cargar el logo:', this.logoSrc, e);
+  }
+
   logout(): void {
     this.auth.logout();
     this.router.navigateByUrl('/login', { replaceUrl: true });
   }
 
   /* =========================
-     TARIFA (VIAJE)
+     SERVICIO / TARIFA
      ========================= */
-  private readonly baseFare = 5.70;
+  selectedService: ServiceMode = 'viaje';
+
+  private readonly baseFare = 5.7;
   private readonly perKm = 0.97;
   private readonly feePct = 0.12;
 
-  /* =========================
-     UI
-     ========================= */
-  logoSrc = 'assets/Images/logo/waybee-logo.png';
-  selectedService: ServiceMode = 'viaje';
+  distanceLabel = '';
+  priceLabel = '';
+  lastKm = 0;
+  lastPrice = 0;
+
+  get canPay(): boolean {
+    return this.selectedService === 'viaje' && this.lastKm > 0 && this.lastPrice > 0;
+  }
 
   /* =========================
      ORIGEN
@@ -102,67 +112,23 @@ export class HomePage implements AfterViewInit {
   destLoading = false;
 
   /* =========================
-     PANEL RESULTADO
-     ========================= */
-  distanceLabel = '';
-  priceLabel = '';
-  lastKm = 0;
-  lastPrice = 0;
-
-  get canPay(): boolean {
-    return this.selectedService === 'viaje' && this.lastKm > 0 && this.lastPrice > 0;
-  }
-
-  /* =========================
-     FAVORITOS (HOME)
+     FAVORITOS (según TU HTML)
      ========================= */
   isFav = false;
   favBusy = false;
   lastFavId: number | null = null;
 
+  // ✅ nombres EXACTOS que pide el HTML
   showFavNameCard = false;
   favTitulo = '';
 
   onFavTituloInput(ev: any): void {
-    this.favTitulo = (ev?.target?.value ?? '').toString();
-  }
-
-  onFavClick(): void {
-    if (this.favBusy) return;
-    if (!this.canPay) return;
-
-    // Si ya es favorito => borrar directo
-    if (this.isFav && this.lastFavId) {
-      this.favBusy = true;
-      const id = this.lastFavId;
-
-      this.favoritosService.remove(id).subscribe({
-        next: () => {
-          this.isFav = false;
-          this.lastFavId = null;
-          this.favBusy = false;
-          this.showFavNameCard = false;
-          this.favTitulo = '';
-        },
-        error: (err: unknown) => {
-          console.error('❌ Error al borrar favorito', err);
-          this.favBusy = false;
-        }
-      });
-      return;
-    }
-
-    // Si NO es favorito => pedir nombre
-    this.showFavNameCard = true;
-    if (!this.favTitulo.trim()) {
-      // sugerencia simple (no “por defecto” guardada; solo pre-relleno visual)
-      const o = (this.locationQuery || '').split(',')[0]?.trim() || 'Origen';
-      const d = (this.destQuery || '').split(',')[0]?.trim() || 'Destino';
-      this.favTitulo = `${o} → ${d}`;
-    }
+    const v = (ev?.target?.value ?? '').toString();
+    this.favTitulo = v;
   }
 
   cancelFavName(): void {
+    if (this.favBusy) return;
     this.showFavNameCard = false;
     this.favTitulo = '';
   }
@@ -171,10 +137,9 @@ export class HomePage implements AfterViewInit {
     if (this.favBusy) return;
     if (!this.canPay) return;
 
-    const titulo = this.favTitulo.trim();
+    const titulo = (this.favTitulo || '').trim();
     if (!titulo) return;
 
-    // coords deben existir si hay ruta
     const payload = {
       titulo,
       origen_direccion: this.locationQuery || '',
@@ -190,23 +155,50 @@ export class HomePage implements AfterViewInit {
     this.favoritosService.create(payload).subscribe({
       next: (created: Favorito) => {
         this.isFav = true;
-        this.lastFavId = Number(created?.id) || null;
+        this.lastFavId = Number((created as any)?.id) || null;
 
-        // ✅ cerrar card
         this.showFavNameCard = false;
         this.favTitulo = '';
-
         this.favBusy = false;
       },
-      error: (err: unknown) => {
+      error: (err: any) => {
         console.error('❌ Error al guardar favorito', err);
         this.favBusy = false;
-      }
+      },
     });
   }
 
+  onFavClick(): void {
+    if (this.favBusy) return;
+    if (!this.canPay) return;
+
+    // Si ya está guardado -> borrar
+    if (this.isFav && this.lastFavId) {
+      const id = this.lastFavId;
+      this.favBusy = true;
+
+      this.favoritosService.remove(id).subscribe({
+        next: () => {
+          this.isFav = false;
+          this.lastFavId = null;
+          this.favBusy = false;
+        },
+        error: (err: any) => {
+          console.error('❌ Error al borrar favorito', err);
+          this.favBusy = false;
+        },
+      });
+
+      return;
+    }
+
+    // Si no está guardado -> pedir nombre
+    this.favTitulo = '';
+    this.showFavNameCard = true;
+  }
+
   /* =========================
-     MAPA / MARKERS / ROUTE
+     MAPA / ROUTING
      ========================= */
   private map!: L.Map;
 
@@ -221,25 +213,26 @@ export class HomePage implements AfterViewInit {
   private originTimer: any = null;
   private destTimer: any = null;
 
+  // Evita reaplicar el mismo state al volver a entrar
+  private lastStateKey = '';
+
   ngAfterViewInit(): void {
     this.initMap();
     setTimeout(() => this.map.invalidateSize(), 250);
-    this.loadProfileImage();
+
+    this.refreshProfileImg();
+
+    // ✅ Si venimos desde Favoritos, aplica y dibuja ruta
+    this.applyFavFromNavigationState();
   }
 
   ionViewDidEnter(): void {
-    this.loadProfileImage();
-
-    // ✅ si venimos de Favoritos con “Usar”
-    const st: any = history.state;
-    const fav: Favorito | undefined = st?.fav;
-    if (fav && typeof fav === 'object') {
-      this.applyFavorito(fav);
-      // limpiar state para que no reaplique en cada enter
-      history.replaceState({}, '');
-    }
+    this.refreshProfileImg();
 
     if (this.map) setTimeout(() => this.map.invalidateSize(), 150);
+
+    // ✅ por si Ionic reusa la view al volver desde Favoritos
+    this.applyFavFromNavigationState();
   }
 
   private initMap(): void {
@@ -295,45 +288,72 @@ export class HomePage implements AfterViewInit {
     }
   }
 
-  private applyFavorito(f: Favorito): void {
-    // activar modo destino
+  /* =========================
+     ✅ APLICAR FAVORITO DESDE FavoritosPage
+     FavoritosPage hace:
+     this.router.navigateByUrl('/home', { state: { fav: f } })
+     (verificado) :contentReference[oaicite:1]{index=1}
+     ========================= */
+  private applyFavFromNavigationState(): void {
+    const st: any = (history && history.state) ? (history.state as any) : null;
+    if (!st?.fav) return;
+
+    const f: any = st.fav;
+
+    const key = JSON.stringify({
+      id: f?.id,
+      olat: f?.origen_lat, olng: f?.origen_lng,
+      dlat: f?.destino_lat, dlng: f?.destino_lng,
+      odir: f?.origen_direccion, ddir: f?.destino_direccion,
+    });
+
+    if (key === this.lastStateKey) return;
+    this.lastStateKey = key;
+
+    // 1) Textos
+    this.locationQuery = (f?.origen_direccion ?? '').toString();
+    this.destQuery = (f?.destino_direccion ?? '').toString();
+
+    // 2) Forzar modo destino para que se muestre el bloque (tu HTML mete fare+dest dentro de destMode)
     this.destMode = true;
 
-    this.locationQuery = f.origen_direccion || '';
-    this.destQuery = f.destino_direccion || '';
+    // 3) coords
+    const oLat = Number(f?.origen_lat);
+    const oLng = Number(f?.origen_lng);
+    const dLat = Number(f?.destino_lat);
+    const dLng = Number(f?.destino_lng);
 
-    const oLat = f.origen_lat;
-    const oLng = f.origen_lng;
-    const dLat = f.destino_lat;
-    const dLng = f.destino_lng;
+    const hasOrigin = Number.isFinite(oLat) && Number.isFinite(oLng);
+    const hasDest = Number.isFinite(dLat) && Number.isFinite(dLng);
 
-    if (typeof oLat === 'number' && typeof oLng === 'number') {
-      this.originLatLng = L.latLng(oLat, oLng);
-      this.ensureMarker('origin', this.originLatLng);
-      this.map.setView(this.originLatLng, 15, { animate: true });
+    // Si el favorito está incompleto, no inventamos
+    if (!hasOrigin || !hasDest) {
+      console.warn('⚠️ Favorito sin coords completas. No se puede dibujar la ruta.', f);
+      this.clearRouteOnly();
+      this.clearFarePanel();
+      return;
     }
 
-    if (typeof dLat === 'number' && typeof dLng === 'number') {
-      this.destLatLng = L.latLng(dLat, dLng);
-      this.ensureMarker('dest', this.destLatLng);
-    }
+    this.originLatLng = L.latLng(oLat, oLng);
+    this.destLatLng = L.latLng(dLat, dLng);
 
-    if (this.originLatLng && this.destLatLng) {
-      this.buildRoute();
-      // no forzamos isFav; eso sería otro check opcional
-      this.isFav = false;
-      this.lastFavId = null;
-      this.showFavNameCard = false;
-      this.favTitulo = '';
-    }
-  }
+    // 4) markers + zoom
+    this.ensureMarker('origin', this.originLatLng);
+    this.ensureMarker('dest', this.destLatLng);
+    this.map.setView(this.originLatLng, 15, { animate: true });
 
-  onLogoError(e: any): void {
-    console.error('❌ No se pudo cargar el logo:', this.logoSrc, e);
+    // 5) Reset estado de favoritos UI (porque estás “usando” una ruta)
+    this.isFav = false;
+    this.lastFavId = null;
+    this.showFavNameCard = false;
+    this.favTitulo = '';
+
+    // 6) Build route (esto termina rellenando distanceLabel/priceLabel)
+    this.buildRoute();
   }
 
   /* =========================
-     ORIGEN EVENTS
+     ORIGEN (Nominatim)
      ========================= */
   onLocationFocus(): void {
     this.showSuggestions = true;
@@ -391,7 +411,6 @@ export class HomePage implements AfterViewInit {
     this.clearRouteOnly();
     this.clearFarePanel();
 
-    // favoritos
     this.isFav = false;
     this.lastFavId = null;
     this.showFavNameCard = false;
@@ -414,8 +433,18 @@ export class HomePage implements AfterViewInit {
     if (this.destLatLng) this.buildRoute();
   }
 
+  private computeOriginSuggestBox(): void {
+    const el = this.locationPill?.nativeElement;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    this.suggestLeft = Math.round(rect.left);
+    this.suggestTop = Math.round(rect.bottom + 8);
+    this.suggestWidth = Math.round(rect.width);
+  }
+
   /* =========================
-     DESTINO EVENTS
+     DESTINO (Nominatim)
      ========================= */
   openDestination(): void {
     this.destMode = true;
@@ -476,7 +505,6 @@ export class HomePage implements AfterViewInit {
     this.clearRouteOnly();
     this.clearFarePanel();
 
-    // favoritos
     this.isFav = false;
     this.lastFavId = null;
     this.showFavNameCard = false;
@@ -597,16 +625,6 @@ export class HomePage implements AfterViewInit {
     return '';
   }
 
-  private computeOriginSuggestBox(): void {
-    const el = this.locationPill?.nativeElement;
-    if (!el) return;
-
-    const rect = el.getBoundingClientRect();
-    this.suggestLeft = Math.round(rect.left);
-    this.suggestTop = Math.round(rect.bottom + 8);
-    this.suggestWidth = Math.round(rect.width);
-  }
-
   /* =========================
      ROUTE + DISTANCIA / PRECIO
      ========================= */
@@ -657,9 +675,7 @@ export class HomePage implements AfterViewInit {
         const km = meters / 1000;
         this.updateFarePanel(km);
 
-        // recalculo => reset fav UI
-        this.isFav = false;
-        this.lastFavId = null;
+        // Al cambiar ruta, “resetea” tarjeta de nombre
         this.showFavNameCard = false;
         this.favTitulo = '';
       }
@@ -668,7 +684,9 @@ export class HomePage implements AfterViewInit {
 
   private clearRouteOnly(): void {
     if (this.routeControl) {
-      try { this.map.removeControl(this.routeControl); } catch {}
+      try {
+        this.map.removeControl(this.routeControl);
+      } catch {}
       this.routeControl = undefined;
     }
   }
@@ -681,7 +699,7 @@ export class HomePage implements AfterViewInit {
   }
 
   private updateFarePanel(km: number): void {
-    const subtotal = this.baseFare + (km * this.perKm);
+    const subtotal = this.baseFare + km * this.perKm;
     const total = subtotal * (1 + this.feePct);
 
     this.lastKm = km;
@@ -692,22 +710,46 @@ export class HomePage implements AfterViewInit {
   }
 
   /* =========================
-     CTA ACEPTAR/PAGAR
+     PAGO (usa tu ServicioService)
      ========================= */
   payTrip(): void {
     if (!this.canPay) return;
 
-    console.log('✅ Aceptar trayecto', {
-      origen: this.locationQuery,
-      destino: this.destQuery,
-      km: Number(this.lastKm.toFixed(2)),
-      precio: Number(this.lastPrice.toFixed(2)),
-      modo: this.selectedService,
+    const u: any = this.auth.getUser?.() || null;
+    const id_usuario = Number(u?.id ?? u?.id_usuario ?? u?.idUsuario);
+
+    if (!id_usuario) {
+      this.auth.logout();
+      this.router.navigateByUrl('/login', { replaceUrl: true });
+      return;
+    }
+
+    const payload: servicio_create_payload = {
+      tipo_servicio: 'viaje',
+      id_usuario,
+      origen_direccion: this.locationQuery || '',
+      destino_direccion: this.destQuery || '',
+      origen_lat: this.originLatLng?.lat ?? null,
+      origen_lng: this.originLatLng?.lng ?? null,
+      destino_lat: this.destLatLng?.lat ?? null,
+      destino_lng: this.destLatLng?.lng ?? null,
+      distancia_km: Number(this.lastKm.toFixed(2)),
+      precio_estimado: Number(this.lastPrice.toFixed(2)),
+      numero_personas: 1,
+    };
+
+    this.servicioService.create(payload).subscribe({
+      next: (created: servicio_create_response) => {
+        console.log('✅ Servicio creado:', created);
+      },
+      error: (err: any) => {
+        console.error('❌ Error creando servicio:', err);
+      },
     });
   }
 
   /* =========================
-     BOTONES
+     NAV
      ========================= */
   setService(mode: ServiceMode): void {
     this.selectedService = mode;
@@ -716,7 +758,12 @@ export class HomePage implements AfterViewInit {
   goFavorites(): void {
     this.router.navigateByUrl('/favoritos');
   }
-  goHistory(): void { console.log('Historial'); }
-  goAccount(): void { console.log('Mi cuenta'); }
-}
 
+  goHistory(): void {
+    console.log('Historial');
+  }
+
+  goAccount(): void {
+    console.log('Mi cuenta');
+  }
+}
