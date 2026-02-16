@@ -17,6 +17,8 @@ const storage = multer.diskStorage({
       file.mimetype === "image/jpeg" ? "jpg" :
       file.mimetype === "image/png"  ? "png" :
       file.mimetype === "image/gif"  ? "gif" :
+      file.mimetype === "image/webp" ? "webp" :
+      (file.mimetype === "image/heic" || file.mimetype === "image/heif") ? "heic" :
       "bin";
 
     const safeName = `image-${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`;
@@ -25,9 +27,9 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowed = ["image/jpeg", "image/png", "image/gif"];
+  const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/heic", "image/heif"];
   if (!allowed.includes(file.mimetype)) {
-    return cb(new Error("Formato no permitido. Solo JPG/PNG/GIF."), false);
+    return cb(new Error("Formato no permitido. Solo JPG/PNG/GIF/WEBP/HEIC."), false);
   }
   cb(null, true);
 };

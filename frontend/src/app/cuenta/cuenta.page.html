@@ -87,11 +87,38 @@
         Esta acción elimina tu cuenta de forma permanente.
       </div>
 
+      <!-- Botón que abre la confirmación -->
       <div class="wb-row-actions">
-        <button class="wb-btn wb-btn-danger" type="button" (click)="deleteAccount()" [disabled]="busy">
+        <button class="wb-btn wb-btn-danger" type="button" (click)="openDeleteCard()" [disabled]="busy">
           Eliminar cuenta
         </button>
       </div>
+
+      <!-- ✅ Confirmación en "card" dentro de la zona de peligro -->
+      <div class="wb-delete-card" *ngIf="showDeleteCard">
+        <div class="wb-note wb-delete-note">
+          Para confirmar, escribe <strong>delete</strong> y pulsa Aceptar.
+        </div>
+
+        <label class="wb-label">Escribe delete</label>
+        <input class="wb-input" type="text" [(ngModel)]="deleteText" placeholder="delete" />
+
+        <div class="wb-row-actions wb-delete-actions">
+          <button class="wb-btn wb-btn-ghost" type="button" (click)="cancelDelete()" [disabled]="busy">
+            Cancelar
+          </button>
+
+          <button
+            class="wb-btn wb-btn-danger"
+            type="button"
+            (click)="confirmDelete()"
+            [disabled]="busy || !canConfirmDelete"
+          >
+            Aceptar
+          </button>
+        </div>
+      </div>
     </div>
+
   </div>
 </ion-content>

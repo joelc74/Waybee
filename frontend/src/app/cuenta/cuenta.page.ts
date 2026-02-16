@@ -33,6 +33,10 @@ export class CuentaPage {
 
   selectedFile: File | null = null;
 
+  // ✅ Confirmación borrado
+  showDeleteCard = false;
+  deleteText = '';
+
   constructor(
     private router: Router,
     private http: HttpClient,
@@ -40,8 +44,13 @@ export class CuentaPage {
   ) {}
 
   ionViewDidEnter(): void {
+    // 1) Carga rápida desde storage
     this.loadFromStorage();
     this.reloadProfileImg();
+
+    // 2) Refresco desde API para tener teléfono/email reales (si storage viene recortado)
+    const id = this.getUserId();
+    if (id) this.fetchUserFromApi(id);
   }
 
   private apiUrl(): string {
@@ -53,6 +62,14 @@ export class CuentaPage {
     // No poner Content-Type; el navegador lo pone con boundary
     return new HttpHeaders({
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    });
+  }
+
+  private getHeadersJson(): HttpHeaders {
+    const token = (this.auth as any).getToken?.() || null;
+    return new HttpHeaders({
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'Content-Type': 'application/json',
     });
   }
 
@@ -69,6 +86,26 @@ export class CuentaPage {
     this.form.telefono = (u?.telefono ?? '').toString();
   }
 
+  private fetchUserFromApi(id: number): void {
+    this.http.get<UserShape>(`${this.apiUrl()}/api/usuario/${id}`, { headers: this.getHeadersJson() })
+      .subscribe({
+        next: (fresh) => {
+          this.user = fresh || {};
+          this.form.email = (fresh?.email ?? '').toString();
+          this.form.telefono = (fresh?.telefono ?? '').toString();
+
+          const current = (this.auth as any).getUser?.() || {};
+          const merged = { ...current, ...fresh };
+          (this.auth as any).setUser?.(merged);
+
+          this.reloadProfileImg();
+        },
+        error: (err) => {
+          console.error('❌ Error trayendo usuario desde API:', err);
+        }
+      });
+  }
+
   onLogoError(e: any): void {
     console.error('❌ No se pudo cargar el logo:', this.logoSrc, e);
   }
@@ -80,8 +117,12 @@ export class CuentaPage {
   reloadProfileImg(): void {
     const fn = (this.auth as any).getProfileImageUrl;
     if (typeof fn === 'function') {
-      this.profileImgUrl = fn.call(this.auth);
-      return;
+      const url = fn.call(this.auth);
+      // Solo si devuelve algo válido; si no, fallback a img_profile
+      if (url) {
+        this.profileImgUrl = url;
+        return;
+      }
     }
 
     const u: any = (this.auth as any).getUser?.() || null;
@@ -118,7 +159,7 @@ export class CuentaPage {
   }
 
   // =========================
-  // ✅ GUARDAR TODO EN 1 BOTÓN (email + teléfono + foto opcional)
+  // GUARDAR TODO
   // =========================
   saveAll(): void {
     if (this.busy) return;
@@ -136,7 +177,7 @@ export class CuentaPage {
     fd.append('telefono', telefono);
 
     if (this.selectedFile) {
-      // IMPORTANTE: el backend usa upload.single("file")
+      // backend: upload.single("file")
       fd.append('file', this.selectedFile);
     }
 
@@ -145,18 +186,15 @@ export class CuentaPage {
     this.http.put<any>(`${this.apiUrl()}/api/usuario/${id}`, fd, { headers: this.getHeadersMultipart() })
       .subscribe({
         next: (updated) => {
-          // Actualiza user en localStorage para que se refleje al instante
           const current = (this.auth as any).getUser?.() || {};
           const merged = { ...current, ...updated };
           (this.auth as any).setUser?.(merged);
 
           this.user = merged;
-
-          // Limpia selección de archivo tras guardar
           this.selectedFile = null;
 
-          // Refresca avatar visible
           this.reloadProfileImg();
+          this.fetchUserFromApi(id);
 
           this.busy = false;
         },
@@ -168,9 +206,31 @@ export class CuentaPage {
   }
 
   // =========================
-  // ELIMINAR CUENTA
+  // ✅ CONFIRMACIÓN BORRADO (CARD)
   // =========================
-  deleteAccount(): void {
+  openDeleteCard(): void {
+    this.deleteText = '';
+    this.showDeleteCard = true;
+  }
+
+  cancelDelete(): void {
+    this.deleteText = '';
+    this.showDeleteCard = false;
+  }
+
+  get canConfirmDelete(): boolean {
+    return (this.deleteText || '').trim().toLowerCase() === 'delete';
+  }
+
+  confirmDelete(): void {
+    if (!this.canConfirmDelete) return;
+    this.deleteAccount(); // borrado real
+  }
+
+  // =========================
+  // ELIMINAR CUENTA (REAL)
+  // =========================
+  private deleteAccount(): void {
     if (this.busy) return;
 
     const id = this.getUserId();
@@ -178,8 +238,6 @@ export class CuentaPage {
 
     this.busy = true;
 
-    // Si tu backend requiere JSON headers aquí, puedes dejarlo como estaba.
-    // Para mantenerlo simple: usamos fetch-like con HttpClient delete sin body.
     const token = (this.auth as any).getToken?.() || null;
     const headers = new HttpHeaders({
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -190,6 +248,11 @@ export class CuentaPage {
         next: () => {
           (this.auth as any).logout?.();
           this.busy = false;
+
+          // Limpieza UI
+          this.showDeleteCard = false;
+          this.deleteText = '';
+
           this.router.navigateByUrl('/login', { replaceUrl: true });
         },
         error: (err) => {
