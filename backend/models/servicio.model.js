@@ -61,14 +61,9 @@ module.exports = (sequelize, Sequelize) => {
 
     // Económico / métricas
     distancia_km: { type: Sequelize.DECIMAL(10, 2), allowNull: true },
-    precio_estimado: { type: Sequelize.DECIMAL(10, 2), allowNull: true },
-    precio_final: { type: Sequelize.DECIMAL(10, 2), allowNull: true },
 
-    // Específicos de viaje
-    numero_personas: {
-      type: Sequelize.INTEGER,
-      allowNull: true
-    },
+    // ✅ SOLO PRECIO
+    precio: { type: Sequelize.DECIMAL(10, 2), allowNull: true },
 
     // Específicos de envío
     peso_paquete: {

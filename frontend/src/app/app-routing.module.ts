@@ -8,9 +8,23 @@ const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
 
   // Favoritos
-   {
+  {
     path: 'favoritos',
     loadChildren: () => import('./favoritos/favoritos.module').then(m => m.FavoritosPageModule)
+  },
+
+  // Historial
+  {
+    path: 'historial',
+    loadChildren: () => import('./historial/historial.module').then(m => m.HistorialPageModule)
+  },
+
+  // Mi Cuenta
+  {
+    path: 'cuenta',
+    loadChildren: () => import('./cuenta/cuenta.module').then(m => m.CuentaPageModule),
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['user', 'admin', 'driver'] }
   },
 
   {
@@ -39,8 +53,6 @@ const routes: Routes = [
   },
 
   { path: '**', redirectTo: 'login' },
-
-
 ];
 
 @NgModule({

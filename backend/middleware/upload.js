@@ -1,3 +1,4 @@
+// backend/middleware/upload.js
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
@@ -10,11 +11,8 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
+  destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
-    // ext a partir del mimetype
     const ext =
       file.mimetype === "image/jpeg" ? "jpg" :
       file.mimetype === "image/png"  ? "png" :
@@ -34,10 +32,8 @@ const fileFilter = (req, file, cb) => {
   cb(null, true);
 };
 
-const upload = multer({
+module.exports = multer({
   storage,
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 });
-
-module.exports = upload;

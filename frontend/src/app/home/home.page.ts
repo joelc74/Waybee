@@ -43,7 +43,7 @@ export class HomePage implements AfterViewInit {
     private router: Router,
     private favoritosService: FavoritosService,
     private servicioService: ServicioService
-  ) {}
+  ) { }
 
   /* =========================
      PERFIL + LOGO
@@ -52,8 +52,6 @@ export class HomePage implements AfterViewInit {
   profileImgUrl: string | null = null;
 
   private refreshProfileImg(): void {
-    // En FavoritosPage usas auth.getProfileImageUrl(), así que lo reutilizo
-    // Si no existiera, te reventaría en compile, pero lo he visto en favoritos.page.ts
     this.profileImgUrl = this.auth.getProfileImageUrl();
   }
 
@@ -84,6 +82,9 @@ export class HomePage implements AfterViewInit {
   lastKm = 0;
   lastPrice = 0;
 
+  paymentDone = false;
+  private currentRequestKey: string | null = null;
+
   get canPay(): boolean {
     return this.selectedService === 'viaje' && this.lastKm > 0 && this.lastPrice > 0;
   }
@@ -112,13 +113,12 @@ export class HomePage implements AfterViewInit {
   destLoading = false;
 
   /* =========================
-     FAVORITOS (según TU HTML)
+     FAVORITOS
      ========================= */
   isFav = false;
   favBusy = false;
   lastFavId: number | null = null;
 
-  // ✅ nombres EXACTOS que pide el HTML
   showFavNameCard = false;
   favTitulo = '';
 
@@ -136,6 +136,7 @@ export class HomePage implements AfterViewInit {
   saveFavName(): void {
     if (this.favBusy) return;
     if (!this.canPay) return;
+    if (this.paymentDone) return;
 
     const titulo = (this.favTitulo || '').trim();
     if (!titulo) return;
@@ -171,8 +172,8 @@ export class HomePage implements AfterViewInit {
   onFavClick(): void {
     if (this.favBusy) return;
     if (!this.canPay) return;
+    if (this.paymentDone) return;
 
-    // Si ya está guardado -> borrar
     if (this.isFav && this.lastFavId) {
       const id = this.lastFavId;
       this.favBusy = true;
@@ -192,13 +193,99 @@ export class HomePage implements AfterViewInit {
       return;
     }
 
-    // Si no está guardado -> pedir nombre
     this.favTitulo = '';
     this.showFavNameCard = true;
   }
 
   /* =========================
-     MAPA / ROUTING
+     PASARELA
+     ========================= */
+  showPayCard = false;
+  payBusy = false;
+
+  fakePay: { number20: string; exp: string; cvv: string } | null = null;
+
+  private randomDigit(): string {
+    return Math.floor(Math.random() * 10).toString();
+  }
+
+  private generateCard20(): string {
+    const raw = Array.from({ length: 20 }, () => this.randomDigit()).join('');
+    return raw.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+  }
+
+  private generateCvv(): string {
+    return Array.from({ length: 3 }, () => this.randomDigit()).join('');
+  }
+
+  openFakePayCard(): void {
+    if (!this.canPay || this.payBusy) return;
+    if (this.paymentDone) return;
+
+    this.fakePay = {
+      number20: this.generateCard20(),
+      exp: '09/33',
+      cvv: this.generateCvv(),
+    };
+
+    this.showPayCard = true;
+  }
+
+  cancelFakePay(): void {
+    if (this.payBusy) return;
+    this.showPayCard = false;
+    this.fakePay = null;
+  }
+
+  confirmFakePay(): void {
+    if (this.payBusy) return;
+    if (!this.canPay) return;
+    if (this.paymentDone) return;
+
+    const u: any = this.auth.getUser?.() || null;
+    const id_usuario = Number(u?.id ?? u?.id_usuario ?? u?.idUsuario);
+
+    if (!id_usuario) {
+      this.auth.logout();
+      this.router.navigateByUrl('/login', { replaceUrl: true });
+      return;
+    }
+
+    const payload: servicio_create_payload = {
+      tipo_servicio: 'viaje',
+      id_usuario,
+      origen_direccion: this.locationQuery || '',
+      destino_direccion: this.destQuery || '',
+      origen_lat: this.originLatLng?.lat ?? null,
+      origen_lng: this.originLatLng?.lng ?? null,
+      destino_lat: this.destLatLng?.lat ?? null,
+      destino_lng: this.destLatLng?.lng ?? null,
+      distancia_km: Number(this.lastKm.toFixed(2)),
+      precio: Number(this.lastPrice.toFixed(2)),
+    };
+
+    this.payBusy = true;
+
+    this.servicioService.create(payload).subscribe({
+      next: (created: servicio_create_response) => {
+        console.log('✅ Servicio creado:', created);
+
+        this.persistRequestedForCurrentRoute();
+        this.paymentDone = true;
+
+        this.payBusy = false;
+        this.showPayCard = false;
+        this.fakePay = null;
+      },
+      error: (err: any) => {
+        console.error('❌ Error creando servicio:', err);
+        this.payBusy = false;
+      },
+    });
+  }
+
+  /* =========================
+     MAPA / ROUTING + Persistencia solicitado
      ========================= */
   private map!: L.Map;
 
@@ -213,7 +300,6 @@ export class HomePage implements AfterViewInit {
   private originTimer: any = null;
   private destTimer: any = null;
 
-  // Evita reaplicar el mismo state al volver a entrar
   private lastStateKey = '';
 
   ngAfterViewInit(): void {
@@ -221,18 +307,15 @@ export class HomePage implements AfterViewInit {
     setTimeout(() => this.map.invalidateSize(), 250);
 
     this.refreshProfileImg();
-
-    // ✅ Si venimos desde Favoritos, aplica y dibuja ruta
     this.applyFavFromNavigationState();
+    this.syncRequestedStateFromCurrentRoute();
   }
 
   ionViewDidEnter(): void {
     this.refreshProfileImg();
-
     if (this.map) setTimeout(() => this.map.invalidateSize(), 150);
-
-    // ✅ por si Ionic reusa la view al volver desde Favoritos
     this.applyFavFromNavigationState();
+    this.syncRequestedStateFromCurrentRoute();
   }
 
   private initMap(): void {
@@ -288,12 +371,46 @@ export class HomePage implements AfterViewInit {
     }
   }
 
-  /* =========================
-     ✅ APLICAR FAVORITO DESDE FavoritosPage
-     FavoritosPage hace:
-     this.router.navigateByUrl('/home', { state: { fav: f } })
-     (verificado) :contentReference[oaicite:1]{index=1}
-     ========================= */
+  private roundCoord(n: number, decimals = 5): number {
+    const p = Math.pow(10, decimals);
+    return Math.round(n * p) / p;
+  }
+
+  private computeCurrentRequestKey(): string | null {
+    if (!this.originLatLng || !this.destLatLng) return null;
+
+    const olat = this.roundCoord(this.originLatLng.lat, 5);
+    const olng = this.roundCoord(this.originLatLng.lng, 5);
+    const dlat = this.roundCoord(this.destLatLng.lat, 5);
+    const dlng = this.roundCoord(this.destLatLng.lng, 5);
+
+    return `wb_req_${olat}_${olng}__${dlat}_${dlng}`;
+  }
+
+  private syncRequestedStateFromCurrentRoute(): void {
+    const key = this.computeCurrentRequestKey();
+    this.currentRequestKey = key;
+
+    if (!key) {
+      this.paymentDone = false;
+      return;
+    }
+
+    this.paymentDone = localStorage.getItem(key) === '1';
+  }
+
+  private persistRequestedForCurrentRoute(): void {
+    const key = this.computeCurrentRequestKey();
+    this.currentRequestKey = key;
+    if (!key) return;
+    localStorage.setItem(key, '1');
+  }
+
+  private resetRequestedState(): void {
+    this.paymentDone = false;
+    this.currentRequestKey = null;
+  }
+
   private applyFavFromNavigationState(): void {
     const st: any = (history && history.state) ? (history.state as any) : null;
     if (!st?.fav) return;
@@ -310,14 +427,10 @@ export class HomePage implements AfterViewInit {
     if (key === this.lastStateKey) return;
     this.lastStateKey = key;
 
-    // 1) Textos
     this.locationQuery = (f?.origen_direccion ?? '').toString();
     this.destQuery = (f?.destino_direccion ?? '').toString();
-
-    // 2) Forzar modo destino para que se muestre el bloque (tu HTML mete fare+dest dentro de destMode)
     this.destMode = true;
 
-    // 3) coords
     const oLat = Number(f?.origen_lat);
     const oLng = Number(f?.origen_lng);
     const dLat = Number(f?.destino_lat);
@@ -326,7 +439,6 @@ export class HomePage implements AfterViewInit {
     const hasOrigin = Number.isFinite(oLat) && Number.isFinite(oLng);
     const hasDest = Number.isFinite(dLat) && Number.isFinite(dLng);
 
-    // Si el favorito está incompleto, no inventamos
     if (!hasOrigin || !hasDest) {
       console.warn('⚠️ Favorito sin coords completas. No se puede dibujar la ruta.', f);
       this.clearRouteOnly();
@@ -337,24 +449,21 @@ export class HomePage implements AfterViewInit {
     this.originLatLng = L.latLng(oLat, oLng);
     this.destLatLng = L.latLng(dLat, dLng);
 
-    // 4) markers + zoom
     this.ensureMarker('origin', this.originLatLng);
     this.ensureMarker('dest', this.destLatLng);
     this.map.setView(this.originLatLng, 15, { animate: true });
 
-    // 5) Reset estado de favoritos UI (porque estás “usando” una ruta)
     this.isFav = false;
     this.lastFavId = null;
     this.showFavNameCard = false;
     this.favTitulo = '';
 
-    // 6) Build route (esto termina rellenando distanceLabel/priceLabel)
+    this.cancelFakePay();
+    this.syncRequestedStateFromCurrentRoute();
+
     this.buildRoute();
   }
 
-  /* =========================
-     ORIGEN (Nominatim)
-     ========================= */
   onLocationFocus(): void {
     this.showSuggestions = true;
     this.computeOriginSuggestBox();
@@ -363,6 +472,8 @@ export class HomePage implements AfterViewInit {
   onLocationInput(ev: any): void {
     const value = (ev?.detail?.value ?? '').toString();
     this.locationQuery = value;
+
+    this.resetRequestedState();
 
     this.showSuggestions = true;
     this.computeOriginSuggestBox();
@@ -402,6 +513,8 @@ export class HomePage implements AfterViewInit {
     this.loading = false;
     this.showSuggestions = false;
 
+    this.resetRequestedState();
+
     this.originLatLng = undefined;
     if (this.originMarker) {
       this.map.removeLayer(this.originMarker);
@@ -415,6 +528,8 @@ export class HomePage implements AfterViewInit {
     this.lastFavId = null;
     this.showFavNameCard = false;
     this.favTitulo = '';
+
+    this.cancelFakePay();
   }
 
   selectSuggestion(s: NominatimResult): void {
@@ -426,6 +541,8 @@ export class HomePage implements AfterViewInit {
     this.suggestions = [];
     this.loading = false;
     this.showSuggestions = false;
+
+    this.resetRequestedState();
 
     this.ensureMarker('origin', pos);
     this.map.setView(pos, 17, { animate: true });
@@ -443,9 +560,6 @@ export class HomePage implements AfterViewInit {
     this.suggestWidth = Math.round(rect.width);
   }
 
-  /* =========================
-     DESTINO (Nominatim)
-     ========================= */
   openDestination(): void {
     this.destMode = true;
     this.showDestSuggestions = true;
@@ -458,6 +572,8 @@ export class HomePage implements AfterViewInit {
   onDestInput(ev: any): void {
     const value = (ev?.detail?.value ?? '').toString();
     this.destQuery = value;
+
+    this.resetRequestedState();
 
     this.showDestSuggestions = true;
 
@@ -496,6 +612,8 @@ export class HomePage implements AfterViewInit {
     this.destLoading = false;
     this.showDestSuggestions = false;
 
+    this.resetRequestedState();
+
     this.destLatLng = undefined;
     if (this.destMarker) {
       this.map.removeLayer(this.destMarker);
@@ -509,6 +627,8 @@ export class HomePage implements AfterViewInit {
     this.lastFavId = null;
     this.showFavNameCard = false;
     this.favTitulo = '';
+
+    this.cancelFakePay();
   }
 
   selectDestSuggestion(s: NominatimResult): void {
@@ -521,14 +641,12 @@ export class HomePage implements AfterViewInit {
     this.destLoading = false;
     this.showDestSuggestions = false;
 
-    this.ensureMarker('dest', pos);
+    this.resetRequestedState();
 
+    this.ensureMarker('dest', pos);
     this.buildRoute();
   }
 
-  /* =========================
-     NOMINATIM
-     ========================= */
   private async fetchSuggestions(query: string, kind: 'origin' | 'dest', autoPick = false): Promise<void> {
     try {
       const url =
@@ -625,9 +743,6 @@ export class HomePage implements AfterViewInit {
     return '';
   }
 
-  /* =========================
-     ROUTE + DISTANCIA / PRECIO
-     ========================= */
   private buildRoute(): void {
     if (!this.originLatLng || !this.destLatLng) return;
 
@@ -675,9 +790,11 @@ export class HomePage implements AfterViewInit {
         const km = meters / 1000;
         this.updateFarePanel(km);
 
-        // Al cambiar ruta, “resetea” tarjeta de nombre
         this.showFavNameCard = false;
         this.favTitulo = '';
+        this.cancelFakePay();
+
+        this.syncRequestedStateFromCurrentRoute();
       }
     });
   }
@@ -686,7 +803,7 @@ export class HomePage implements AfterViewInit {
     if (this.routeControl) {
       try {
         this.map.removeControl(this.routeControl);
-      } catch {}
+      } catch { }
       this.routeControl = undefined;
     }
   }
@@ -696,6 +813,7 @@ export class HomePage implements AfterViewInit {
     this.priceLabel = '';
     this.lastKm = 0;
     this.lastPrice = 0;
+    this.resetRequestedState();
   }
 
   private updateFarePanel(km: number): void {
@@ -709,48 +827,6 @@ export class HomePage implements AfterViewInit {
     this.priceLabel = `Precio final: ${total.toFixed(2)} €`;
   }
 
-  /* =========================
-     PAGO (usa tu ServicioService)
-     ========================= */
-  payTrip(): void {
-    if (!this.canPay) return;
-
-    const u: any = this.auth.getUser?.() || null;
-    const id_usuario = Number(u?.id ?? u?.id_usuario ?? u?.idUsuario);
-
-    if (!id_usuario) {
-      this.auth.logout();
-      this.router.navigateByUrl('/login', { replaceUrl: true });
-      return;
-    }
-
-    const payload: servicio_create_payload = {
-      tipo_servicio: 'viaje',
-      id_usuario,
-      origen_direccion: this.locationQuery || '',
-      destino_direccion: this.destQuery || '',
-      origen_lat: this.originLatLng?.lat ?? null,
-      origen_lng: this.originLatLng?.lng ?? null,
-      destino_lat: this.destLatLng?.lat ?? null,
-      destino_lng: this.destLatLng?.lng ?? null,
-      distancia_km: Number(this.lastKm.toFixed(2)),
-      precio_estimado: Number(this.lastPrice.toFixed(2)),
-      numero_personas: 1,
-    };
-
-    this.servicioService.create(payload).subscribe({
-      next: (created: servicio_create_response) => {
-        console.log('✅ Servicio creado:', created);
-      },
-      error: (err: any) => {
-        console.error('❌ Error creando servicio:', err);
-      },
-    });
-  }
-
-  /* =========================
-     NAV
-     ========================= */
   setService(mode: ServiceMode): void {
     this.selectedService = mode;
   }
@@ -760,10 +836,12 @@ export class HomePage implements AfterViewInit {
   }
 
   goHistory(): void {
-    console.log('Historial');
+    this.router.navigateByUrl('/historial');
   }
 
   goAccount(): void {
-    console.log('Mi cuenta');
+    this.router.navigateByUrl('/cuenta');
   }
+
+
 }

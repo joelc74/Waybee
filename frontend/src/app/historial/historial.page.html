@@ -1,0 +1,124 @@
+<!-- frontend/src/app/historial/historial.page.html -->
+<ion-header class="wb-header" [translucent]="true">
+  <ion-toolbar class="wb-toolbar">
+    <div class="wb-topbar">
+      <div class="wb-left">
+        <ion-button fill="clear" class="wb-back" aria-label="Volver" (click)="goBack()">
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </ion-button>
+
+        <div class="wb-logo">
+          <img [src]="logoSrc" alt="Waybee" (error)="onLogoError($event)" />
+        </div>
+      </div>
+
+      <div class="wb-right-icons">
+        <ion-button fill="clear" class="wb-bell" aria-label="Notificaciones">
+          <ion-icon name="notifications"></ion-icon>
+        </ion-button>
+
+        <ion-button fill="clear" class="wb-logout" aria-label="Cerrar sesión" (click)="logout()">
+          <ion-icon name="log-out-outline"></ion-icon>
+        </ion-button>
+
+        <div class="wb-user" aria-label="Usuario">
+          <img
+            *ngIf="profileImgUrl; else userIconTpl"
+            [src]="profileImgUrl"
+            class="wb-user-img"
+            (error)="onProfileImgError()"
+            alt="Perfil"
+          />
+          <ng-template #userIconTpl>
+            <ion-icon name="person"></ion-icon>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="wb-content">
+  <div class="wb-page">
+    <div class="wb-title-row">
+      <div class="wb-title">Historial</div>
+
+      <button class="wb-refresh" type="button" (click)="reload()" aria-label="Recargar">
+        <ion-icon name="refresh-outline"></ion-icon>
+      </button>
+    </div>
+
+    <div class="wb-card wb-error" *ngIf="!loading && error">
+      {{ error }}
+    </div>
+
+    <div class="wb-card" *ngIf="!loading && !error && servicios.length === 0">
+      No hay servicios todavía.
+    </div>
+
+    <div class="wb-loading" *ngIf="loading">
+      <ion-spinner name="crescent"></ion-spinner>
+      <span>Cargando…</span>
+    </div>
+
+    <div class="wb-list" *ngIf="!loading && !error && servicios.length">
+      <div class="wb-hitem" *ngFor="let s of servicios">
+        <!-- TOP -->
+        <div class="wb-h-top">
+          <div class="wb-chip" [class.pending]="(s.estado || '').toLowerCase() === 'pendiente'">
+            {{ formatEstado(s.estado) }}
+          </div>
+
+          <div class="wb-meta">
+            <span class="wb-id">#{{ s.id_servicio }}</span>
+            <span class="wb-dot">·</span>
+            <span class="wb-date">{{ formatFecha(s.fecha_creacion) }}</span>
+          </div>
+        </div>
+
+        <!-- TIPO -->
+        <div class="wb-row">
+          <div class="wb-k">Tipo</div>
+          <div class="wb-v">{{ formatTipo(s.tipo_servicio) }}</div>
+        </div>
+
+        <!-- ORIGEN / DESTINO -->
+        <div class="wb-locs">
+          <div class="wb-loc">
+            <div class="wb-bullet"></div>
+            <div class="wb-loc-txt">{{ s.origen_direccion || '—' }}</div>
+          </div>
+
+          <div class="wb-loc">
+            <div class="wb-bullet"></div>
+            <div class="wb-loc-txt">{{ s.destino_direccion || '—' }}</div>
+          </div>
+        </div>
+
+        <!-- MÉTRICAS (✅ SOLO DISTANCIA + PRECIO) -->
+        <div class="wb-metrics">
+          <div class="wb-metric">
+            <div class="wb-m-k">Distancia</div>
+            <div class="wb-m-v">
+              <ng-container *ngIf="asNumber(s.distancia_km) !== null; else dashKm">
+                {{ asNumber(s.distancia_km)?.toFixed(2) }} km
+              </ng-container>
+              <ng-template #dashKm>—</ng-template>
+            </div>
+          </div>
+
+          <div class="wb-metric">
+            <div class="wb-m-k">Precio</div>
+            <div class="wb-m-v">
+              <ng-container *ngIf="getPrecio(s) !== null; else dashP">
+                {{ getPrecio(s)?.toFixed(2) }} €
+              </ng-container>
+              <ng-template #dashP>—</ng-template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</ion-content>

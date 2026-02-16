@@ -1,0 +1,263 @@
+/* frontend/src/app/historial/historial.page.scss */
+:host {
+  --wb-yellow: #f7c400;
+  --wb-black: #111111;
+  --wb-sheet: #ffffff;
+}
+
+.wb-header { --background: transparent; }
+
+.wb-toolbar {
+  --background: var(--wb-yellow);
+  padding: 10px 12px 12px;
+}
+
+.wb-topbar{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+}
+
+.wb-left{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+}
+
+.wb-back{
+  --color:#000;
+  font-size: 22px;
+  --padding-start:0;
+  --padding-end:0;
+  min-width: 34px;
+  height: 34px;
+  margin: 0;
+}
+
+.wb-logo img{
+  height: 34px;
+  width: auto;
+  display:block;
+  object-fit: contain;
+}
+
+.wb-right-icons{
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+
+.wb-right-icons ion-button{
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --ripple-color: rgba(0,0,0,0.15);
+
+  min-width: 34px;
+  height: 34px;
+  margin: 0;
+}
+
+.wb-bell{ --color:#000; font-size:22px; }
+.wb-logout{ --color:#000; font-size:22px; }
+
+.wb-user{
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #000;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 10px 18px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+.wb-user ion-icon{ color:#fff; font-size:18px; }
+.wb-user-img{
+  width:100%;
+  height:100%;
+  object-fit: cover;
+  display:block;
+}
+
+/* CONTENT */
+.wb-content{ --background:#e9e9e9; }
+
+.wb-page{
+  padding: 14px 14px;
+}
+
+/* Título + refresh (en contenido, no en topbar) */
+.wb-title-row{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  margin: 8px 0 14px;
+}
+
+.wb-title{
+  font-size: 22px;
+  font-weight: 900;
+  color: #111;
+  margin: 0;
+}
+
+.wb-refresh{
+  border: 0;
+  background: transparent;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  color:#111;
+}
+
+.wb-refresh ion-icon{
+  font-size: 22px;
+}
+
+.wb-card{
+  background:#fff;
+  border-radius: 14px;
+  padding: 14px 14px;
+  box-shadow: 0 10px 18px rgba(0,0,0,0.14);
+  border: 1px solid rgba(0,0,0,0.06);
+  font-weight: 800;
+  color: rgba(0,0,0,0.70);
+}
+
+.wb-error{
+  color: #b00020;
+}
+
+.wb-loading{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  color: rgba(0,0,0,0.65);
+  font-weight: 800;
+}
+
+/* LISTA */
+.wb-list{
+  display:flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Card historial */
+.wb-hitem{
+  background:#fff;
+  border-radius: 14px;
+  padding: 14px 14px;
+  box-shadow: 0 10px 18px rgba(0,0,0,0.14);
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+/* Top line */
+.wb-h-top{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.wb-chip{
+  font-weight: 900;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.06);
+  color:#111;
+}
+
+.wb-chip.pending{
+  background: rgba(247,196,0,0.35);
+}
+
+.wb-meta{
+  color: rgba(0,0,0,0.55);
+  font-weight: 900;
+  font-size: 12px;
+  display:flex;
+  align-items:center;
+  gap: 6px;
+}
+
+.wb-row{
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  margin: 8px 0 10px;
+}
+
+.wb-k{
+  color: rgba(0,0,0,0.55);
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.wb-v{
+  color:#111;
+  font-weight: 1000;
+  font-size: 12px;
+}
+
+.wb-locs{
+  display:flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.wb-loc{
+  display:flex;
+  gap: 10px;
+  align-items:flex-start;
+}
+
+.wb-bullet{
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background:#111;
+  flex: 0 0 auto;
+}
+
+.wb-loc-txt{
+  font-weight: 900;
+  font-size: 12px;
+  color:#111;
+  line-height: 1.25;
+}
+
+/* Métricas */
+.wb-metrics{
+  margin-top: 12px;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.wb-metric{
+  background: #f3f3f3;
+  border-radius: 14px;
+  padding: 10px 10px;
+  border: 1px solid rgba(0,0,0,0.04);
+}
+
+.wb-m-k{
+  font-weight: 1000;
+  font-size: 12px;
+  color: rgba(0,0,0,0.55);
+  margin-bottom: 4px;
+}
+
+.wb-m-v{
+  font-weight: 1100;
+  font-size: 16px;
+  color:#111;
+}

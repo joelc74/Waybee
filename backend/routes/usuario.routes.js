@@ -1,21 +1,24 @@
+// backend/routes/usuario.routes.js
 module.exports = app => {
-  const usuario = require("../controllers/usuario.controller.js");
-  const upload = require("../middleware/upload.js");
-  const router = require("express").Router();
+  const express = require("express");
+  const router = express.Router();
 
-  // Create a new usuario (opcional: file)
+  const usuario = require("../controllers/usuario.controller");
+  const upload = require("../middleware/upload");
+
+  // Crear usuario (admite foto opcional en multipart: file)
   router.post("/", upload.single("file"), usuario.create);
 
-  // Retrieve all usuarios
+  // Listar usuarios
   router.get("/", usuario.findAll);
 
-  // Retrieve a single usuario with id
+  // Obtener usuario por id
   router.get("/:id", usuario.findOne);
 
-  // Update a usuario with id
-  router.put("/:id", usuario.update);
+  // ✅ Update con multipart (email/teléfono) + foto opcional
+  router.put("/:id", upload.single("file"), usuario.update);
 
-  // Delete a usuario with id
+  // Eliminar usuario
   router.delete("/:id", usuario.remove);
 
   app.use("/api/usuario", router);

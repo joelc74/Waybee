@@ -19,20 +19,24 @@ export type servicio_create_payload = {
   destino_lng?: number | null;
 
   distancia_km?: number | null;
-  precio_estimado?: number | null;
 
-  // viaje
-  numero_personas?: number | null;
+  // ✅ SOLO PRECIO
+  precio?: number | null;
 
-  // envio (si lo implementas en UI)
+  // envio
   peso_paquete?: number | null;
+  dimensiones_paquete?: string | null;
+  fragil?: boolean | null;
 };
 
 export type servicio_create_response = {
-  id?: number;
+  id_servicio?: number;
   id_usuario?: number;
   tipo_servicio?: string;
   estado?: servicio_estado;
+
+  precio?: number | null;
+
   [k: string]: any;
 };
 
@@ -52,23 +56,23 @@ export class ServicioService {
     });
   }
 
-  // Backend: POST /api/servicio
+  // POST /api/servicio
   create(payload: servicio_create_payload): Observable<servicio_create_response> {
     return this.http.post<servicio_create_response>(`${this.apiUrl}/api/servicio`, payload, {
       headers: this.getHeaders(),
     });
   }
 
-  // Backend: GET /api/servicio/pool
+  // GET /api/servicio/pool
   getPool(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/api/servicio/pool`, {
       headers: this.getHeaders(),
     });
   }
 
-  // Backend: GET /api/servicio/user/:id_usuario
+  // GET /api/servicio?id_usuario=123
   getByUser(id_usuario: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/api/servicio/user/${id_usuario}`, {
+    return this.http.get<any[]>(`${this.apiUrl}/api/servicio?id_usuario=${id_usuario}`, {
       headers: this.getHeaders(),
     });
   }

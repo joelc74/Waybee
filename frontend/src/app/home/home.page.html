@@ -14,17 +14,12 @@
           <ion-icon name="notifications"></ion-icon>
         </ion-button>
 
-        <!-- ✅ Cerrar sesión -->
-        <ion-button
-          fill="clear"
-          class="wb-logout"
-          aria-label="Cerrar sesión"
-          (click)="logout()"
-        >
+        <!-- Cerrar sesión -->
+        <ion-button fill="clear" class="wb-logout" aria-label="Cerrar sesión" (click)="logout()">
           <ion-icon name="log-out-outline"></ion-icon>
         </ion-button>
 
-        <!-- Usuario (solo informativo, sin acción) -->
+        <!-- Usuario -->
         <div class="wb-user" aria-label="Usuario">
           <img
             *ngIf="profileImgUrl; else userIconTpl"
@@ -71,7 +66,7 @@
 
 <ion-content [fullscreen]="true" class="wb-content">
 
-  <!-- ✅ Dropdown FIXED (ORIGEN) -->
+  <!-- Dropdown FIXED (ORIGEN) -->
   <div
     class="wb-suggest wb-suggest-fixed"
     *ngIf="showSuggestions"
@@ -108,7 +103,7 @@
         </button>
       </div>
 
-      <!-- ✅ CTA -> se transforma a input de destino -->
+      <!-- CTA -->
       <ng-container *ngIf="!destMode; else destInputTpl">
         <button class="wb-cta" type="button" (click)="openDestination()">
           ¿A dónde vamos?
@@ -116,17 +111,19 @@
       </ng-container>
 
       <ng-template #destInputTpl>
-        <!-- ✅ PANEL flotante (distancia + precio) + ❤️ + CTA -->
+
+        <!-- PANEL distancia+precio -->
         <div class="wb-fare" *ngIf="distanceLabel && priceLabel">
           <div class="wb-fare-left">
             <div class="wb-fare-row">{{ distanceLabel }}</div>
             <div class="wb-fare-row wb-fare-strong">{{ priceLabel }}</div>
           </div>
 
-          <!-- ✅ CORAZÓN ENTRE DATOS Y PAGAR -->
+          <!-- ✅ CORAZÓN: solo antes de solicitar -->
           <button
             class="wb-fav"
             type="button"
+            *ngIf="!paymentDone"
             [disabled]="!canPay || favBusy"
             (click)="onFavClick()"
             aria-label="Guardar favorito"
@@ -134,19 +131,29 @@
             <ion-icon [name]="isFav ? 'heart' : 'heart-outline'"></ion-icon>
           </button>
 
-          <button
-            class="wb-pay"
-            type="button"
-            [disabled]="!canPay"
-            (click)="payTrip()"
-            aria-label="Aceptar y pagar"
-          >
-            <ion-icon name="card-outline"></ion-icon>
-            <span>Pagar</span>
-          </button>
+          <!-- ✅ Pagar / Solicitado -->
+          <ng-container *ngIf="!paymentDone; else requestedTpl">
+            <button
+              class="wb-pay"
+              type="button"
+              [disabled]="!canPay || payBusy"
+              (click)="openFakePayCard()"
+              aria-label="Pagar"
+            >
+              <ion-icon name="card-outline"></ion-icon>
+              <span>Pagar</span>
+            </button>
+          </ng-container>
+
+          <ng-template #requestedTpl>
+            <div class="wb-requested" aria-label="Solicitado">
+              <ion-icon name="checkmark-circle"></ion-icon>
+              <span>Solicitado</span>
+            </div>
+          </ng-template>
         </div>
 
-        <!-- ✅ CARD NOMBRE RUTA -->
+        <!-- CARD NOMBRE RUTA -->
         <div class="wb-route-name-card" *ngIf="showFavNameCard">
           <div class="wb-route-name-title">Nombre de la ruta</div>
 
@@ -163,6 +170,31 @@
             <button class="wb-route-save" type="button" (click)="saveFavName()" [disabled]="favBusy || !favTitulo.trim()">
               Guardar
             </button>
+          </div>
+        </div>
+
+        <!-- CARD PASARELA FALSA -->
+        <div class="wb-pay-card" *ngIf="showPayCard && fakePay">
+          <div class="wb-pay-title">Pago (demo)</div>
+
+          <div class="wb-pay-row">
+            <span>Número</span>
+            <strong>{{ fakePay.number20 }}</strong>
+          </div>
+
+          <div class="wb-pay-row">
+            <span>Caducidad</span>
+            <strong>{{ fakePay.exp }}</strong>
+          </div>
+
+          <div class="wb-pay-row">
+            <span>CVV</span>
+            <strong>{{ fakePay.cvv }}</strong>
+          </div>
+
+          <div class="wb-pay-actions">
+            <button class="wb-pay-cancel" type="button" [disabled]="payBusy" (click)="cancelFakePay()">Cancelar</button>
+            <button class="wb-pay-confirm" type="button" [disabled]="payBusy" (click)="confirmFakePay()">Aceptar</button>
           </div>
         </div>
 
@@ -191,7 +223,6 @@
             </ion-button>
           </div>
 
-          <!-- Dropdown destino (normal, dentro del sheet) -->
           <div class="wb-suggest wb-dest-suggest" *ngIf="showDestSuggestions">
             <div class="wb-suggest-empty" *ngIf="destQuery.trim().length >= 2 && !destLoading && destSuggestions.length === 0">
               Sin resultados

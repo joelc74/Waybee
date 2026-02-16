@@ -1,3 +1,4 @@
+// backend/controllers/usuario.controller.js
 const db = require("../models");
 const bcrypt = require("bcrypt");
 
@@ -20,14 +21,17 @@ exports.create = async (req, res) => {
       return res.status(400).json({ message: "password o password_hash es obligatorio." });
     }
 
+    // ✅ si viene archivo (multipart), guardamos ruta en img_profile
+    const img_profile = req.file?.filename ? `/images/${req.file.filename}` : null;
+
     const usuario = await Usuario.create({
       nombre: body.nombre,
       email: body.email,
       telefono: body.telefono || null,
       activo: body.activo ?? true,
       password_hash,
-      rol: "user",
-      // fecha_registro default en modelo
+      rol: body.rol || "user",
+      img_profile: img_profile || body.img_profile || null,
     });
 
     return res.status(201).json(usuario);
@@ -72,25 +76,38 @@ exports.findOne = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const id = req.params.id;
+
+    // Con multipart, multer rellena req.body con strings
     const body = req.body || {};
 
     const usuario = await Usuario.findByPk(id);
     if (!usuario) return res.status(404).json({ message: "Usuario no encontrado." });
 
-    // Si llega password, re-hash
+    // ✅ si llega archivo, actualizamos img_profile
+    const newImgProfile = req.file?.filename ? `/images/${req.file.filename}` : null;
+
+    // Si llega password, re-hash (aunque luego no lo uses en UI)
     if (body.password) {
       body.password_hash = await bcrypt.hash(body.password, 12);
       delete body.password;
     }
 
-    await usuario.update({
-      nombre: body.nombre ?? usuario.nombre,
-      email: body.email ?? usuario.email,
-      telefono: body.telefono ?? usuario.telefono,
-      activo: body.activo ?? usuario.activo,
-      password_hash: body.password_hash ?? usuario.password_hash,
-      rol: body.rol ?? usuario.rol,
-    });
+    // Construimos patch sin pisar campos si no vienen
+    const patch = {};
+
+    if (body.nombre !== undefined) patch.nombre = body.nombre;
+    if (body.email !== undefined) patch.email = body.email;
+    if (body.telefono !== undefined) patch.telefono = body.telefono;
+
+    if (body.activo !== undefined) patch.activo = body.activo;
+    if (body.rol !== undefined) patch.rol = body.rol;
+
+    if (body.password_hash !== undefined) patch.password_hash = body.password_hash;
+
+    // ✅ clave: solo si hay archivo
+    if (newImgProfile) patch.img_profile = newImgProfile;
+
+    await usuario.update(patch);
 
     return res.json(usuario);
   } catch (e) {

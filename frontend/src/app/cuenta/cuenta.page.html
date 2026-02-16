@@ -1,0 +1,97 @@
+<ion-header class="wb-header" [translucent]="true">
+  <ion-toolbar class="wb-toolbar">
+    <div class="wb-topbar">
+      <div class="wb-left">
+        <ion-button fill="clear" class="wb-back" aria-label="Volver" (click)="goBack()">
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </ion-button>
+
+        <div class="wb-logo">
+          <img [src]="logoSrc" alt="Waybee" (error)="onLogoError($event)" />
+        </div>
+      </div>
+
+      <div class="wb-right-icons">
+        <ion-button fill="clear" class="wb-bell" aria-label="Notificaciones">
+          <ion-icon name="notifications"></ion-icon>
+        </ion-button>
+
+        <ion-button fill="clear" class="wb-logout" aria-label="Cerrar sesión" (click)="logout()">
+          <ion-icon name="log-out-outline"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="wb-content">
+  <div class="wb-page">
+    <div class="wb-title">Mi cuenta</div>
+
+    <!-- FOTO PERFIL (GRANDE) -->
+    <div class="wb-profile-card">
+      <div class="wb-profile-pic">
+        <img
+          *ngIf="profileImgUrl; else profileFallback"
+          [src]="profileImgUrl"
+          (error)="onProfileImgError()"
+          alt="Perfil"
+        />
+        <ng-template #profileFallback>
+          <div class="wb-profile-fallback">
+            <ion-icon name="person"></ion-icon>
+          </div>
+        </ng-template>
+      </div>
+
+      <div class="wb-profile-meta">
+        <div class="wb-name">{{ user?.nombre || 'Usuario' }}</div>
+        <div class="wb-sub">{{ user?.rol || '' }}</div>
+      </div>
+
+      <div class="wb-profile-actions">
+        <button class="wb-btn wb-btn-ghost" type="button" (click)="reloadProfileImg()" [disabled]="busy">
+          Recargar foto
+        </button>
+      </div>
+    </div>
+
+    <!-- DATOS + FOTO (TODO JUNTO) -->
+    <div class="wb-card">
+      <div class="wb-card-title">Datos y foto</div>
+
+      <label class="wb-label">Email</label>
+      <input class="wb-input" type="email" [(ngModel)]="form.email" placeholder="tu@email.com" />
+
+      <label class="wb-label">Teléfono</label>
+      <input class="wb-input" type="text" [(ngModel)]="form.telefono" placeholder="(opcional)" />
+
+      <label class="wb-label">Nueva foto (opcional)</label>
+      <input class="wb-file" type="file" accept="image/*" (change)="onPickFile($event)" />
+
+      <div class="wb-hint" *ngIf="selectedFileName">
+        Archivo seleccionado: <strong>{{ selectedFileName }}</strong>
+      </div>
+
+      <div class="wb-row-actions">
+        <button class="wb-btn wb-btn-black" type="button" (click)="saveAll()" [disabled]="busy || !form.email.trim()">
+          Guardar cambios
+        </button>
+      </div>
+    </div>
+
+    <!-- ELIMINAR -->
+    <div class="wb-card wb-danger">
+      <div class="wb-card-title">Zona de peligro</div>
+      <div class="wb-note">
+        Esta acción elimina tu cuenta de forma permanente.
+      </div>
+
+      <div class="wb-row-actions">
+        <button class="wb-btn wb-btn-danger" type="button" (click)="deleteAccount()" [disabled]="busy">
+          Eliminar cuenta
+        </button>
+      </div>
+    </div>
+  </div>
+</ion-content>

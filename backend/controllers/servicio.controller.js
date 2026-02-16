@@ -5,16 +5,17 @@ exports.create = async (req, res) => {
   try {
     const body = req.body || {};
 
-    if (!body.tipo_servicio) return res.status(400).json({ message: "tipo_servicio (viaje|envio) es obligatorio." });
-    if (!body.id_usuario) return res.status(400).json({ message: "id_usuario es obligatorio." });
+    if (!body.tipo_servicio) {
+      return res.status(400).json({ message: "tipo_servicio (viaje|envio) es obligatorio." });
+    }
+    if (!body.id_usuario) {
+      return res.status(400).json({ message: "id_usuario es obligatorio." });
+    }
     if (!body.origen_direccion || !body.destino_direccion) {
       return res.status(400).json({ message: "origen_direccion y destino_direccion son obligatorios." });
     }
 
     // reglas por tipo
-    if (body.tipo_servicio === "viaje" && !body.numero_personas) {
-      return res.status(400).json({ message: "numero_personas es obligatorio para viaje." });
-    }
     if (body.tipo_servicio === "envio" && (body.peso_paquete === undefined || body.peso_paquete === null)) {
       return res.status(400).json({ message: "peso_paquete es obligatorio para envio." });
     }
@@ -34,11 +35,12 @@ exports.create = async (req, res) => {
       destino_lng: body.destino_lng ?? null,
 
       distancia_km: body.distancia_km ?? null,
-      precio_estimado: body.precio_estimado ?? null,
-      precio_final: null,
 
-      numero_personas: body.tipo_servicio === "viaje" ? body.numero_personas : null,
-      peso_paquete: body.tipo_servicio === "envio" ? body.peso_paquete : null,
+      // ✅ SOLO PRECIO
+      precio: body.precio ?? null,
+
+      // envio
+      peso_paquete: body.tipo_servicio === "envio" ? (body.peso_paquete ?? null) : null,
       dimensiones_paquete: body.tipo_servicio === "envio" ? (body.dimensiones_paquete ?? null) : null,
       fragil: body.tipo_servicio === "envio" ? (body.fragil ?? false) : false,
     });
@@ -123,7 +125,7 @@ exports.findAll = async (req, res) => {
 exports.setEstado = async (req, res) => {
   try {
     const id_servicio = req.params.id;
-    const { estado, precio_final } = req.body || {};
+    const { estado, precio } = req.body || {};
 
     const allowed = ["pendiente", "aceptado", "en_curso", "completado", "cancelado"];
     if (!allowed.includes(estado)) {
@@ -135,7 +137,7 @@ exports.setEstado = async (req, res) => {
 
     const patch = { estado };
     if (estado === "completado") patch.fecha_completado = new Date();
-    if (precio_final !== undefined) patch.precio_final = precio_final;
+    if (precio !== undefined) patch.precio = precio;
 
     await servicio.update(patch);
     return res.json(servicio);
