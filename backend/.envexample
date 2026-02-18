@@ -1,0 +1,12 @@
+# Server
+PORT=8080
+
+# JWT
+JWT_SECRET=waybee_super_secret_key_2026_cambia_esto
+JWT_EXPIRES_IN=7d
+
+# Database
+DB_HOST=localhost
+DB_NAME=waybee_db
+DB_USER=root
+DB_PASSWORD=PGL1+
