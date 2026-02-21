@@ -1,6 +1,34 @@
 const db = require("../models");
 const Servicio = db.servicio;
 
+/**
+ * Resuelve el id_conductor REAL (tabla conductor) a partir de lo que mande el frontend.
+ * - Si te mandan un id_conductor válido -> lo usamos.
+ * - Si te mandan un id_usuario (rol driver) -> buscamos conductor por id_usuario y devolvemos su id_conductor.
+ * Devuelve number o null.
+ */
+async function resolveConductorId(inputId, transaction) {
+  const raw = Number(inputId);
+  if (!Number.isFinite(raw) || raw <= 0) return null;
+
+  // 1) Intento: input ya es un id_conductor REAL
+  if (db.conductor && typeof db.conductor.findByPk === "function") {
+    const byPk = await db.conductor.findByPk(raw, { transaction });
+    if (byPk) return byPk.id_conductor;
+  }
+
+  // 2) Intento: input es id_usuario -> buscar conductor por id_usuario
+  if (db.conductor && typeof db.conductor.findOne === "function") {
+    const byUser = await db.conductor.findOne({
+      where: { id_usuario: raw },
+      transaction,
+    });
+    if (byUser) return byUser.id_conductor;
+  }
+
+  return null;
+}
+
 exports.create = async (req, res) => {
   try {
     const body = req.body || {};
@@ -15,7 +43,6 @@ exports.create = async (req, res) => {
       return res.status(400).json({ message: "origen_direccion y destino_direccion son obligatorios." });
     }
 
-    // reglas por tipo
     if (body.tipo_servicio === "envio" && (body.peso_paquete === undefined || body.peso_paquete === null)) {
       return res.status(400).json({ message: "peso_paquete es obligatorio para envio." });
     }
@@ -35,11 +62,8 @@ exports.create = async (req, res) => {
       destino_lng: body.destino_lng ?? null,
 
       distancia_km: body.distancia_km ?? null,
-
-      // ✅ SOLO PRECIO
       precio: body.precio ?? null,
 
-      // envio
       peso_paquete: body.tipo_servicio === "envio" ? (body.peso_paquete ?? null) : null,
       dimensiones_paquete: body.tipo_servicio === "envio" ? (body.dimensiones_paquete ?? null) : null,
       fragil: body.tipo_servicio === "envio" ? (body.fragil ?? false) : false,
@@ -47,11 +71,11 @@ exports.create = async (req, res) => {
 
     return res.status(201).json(servicio);
   } catch (e) {
+    console.error("❌ create servicio:", e);
     return res.status(500).json({ message: e.message || "Error creando servicio." });
   }
 };
 
-// Pool: solo pendientes y sin conductor
 exports.pool = async (req, res) => {
   try {
     const { tipo_servicio } = req.query;
@@ -61,11 +85,20 @@ exports.pool = async (req, res) => {
     const servicios = await Servicio.findAll({ where, order: [["fecha_creacion", "DESC"]] });
     return res.json(servicios);
   } catch (e) {
+    console.error("❌ pool servicio:", e);
     return res.status(500).json({ message: e.message || "Error obteniendo pool." });
   }
 };
 
-// Aceptar: atómico (evita doble aceptación)
+/**
+ * ✅ Aceptar servicio (atómico)
+ * POST /api/servicio/:id/accept  body: { id_conductor }
+ *
+ * IMPORTANTE:
+ * - El frontend puede mandar:
+ *    a) conductor.id_conductor REAL  (1,2,3...)
+ *    b) usuario.id_usuario del driver (7,8,9...)  -> lo resolvemos a conductor.id_conductor
+ */
 exports.accept = async (req, res) => {
   const t = await db.sequelize.transaction();
   try {
@@ -77,8 +110,18 @@ exports.accept = async (req, res) => {
       return res.status(400).json({ message: "id_conductor es obligatorio." });
     }
 
+    const realConductorId = await resolveConductorId(id_conductor, t);
+
+    if (!realConductorId) {
+      await t.rollback();
+      return res.status(400).json({
+        message:
+          "El conductor no existe en la tabla 'conductor' para ese usuario. Crea primero el conductor (conductor.id_usuario) o envía un id_conductor real.",
+      });
+    }
+
     const [updated] = await Servicio.update(
-      { estado: "aceptado", id_conductor, fecha_aceptacion: new Date() },
+      { estado: "aceptado", id_conductor: realConductorId, fecha_aceptacion: new Date() },
       { where: { id_servicio, estado: "pendiente", id_conductor: null }, transaction: t }
     );
 
@@ -92,6 +135,7 @@ exports.accept = async (req, res) => {
     return res.json(servicio);
   } catch (e) {
     await t.rollback();
+    console.error("❌ accept servicio:", e);
     return res.status(500).json({ message: e.message || "Error aceptando servicio." });
   }
 };
@@ -102,6 +146,7 @@ exports.findOne = async (req, res) => {
     if (!servicio) return res.status(404).json({ message: "Servicio no encontrado." });
     return res.json(servicio);
   } catch (e) {
+    console.error("❌ findOne servicio:", e);
     return res.status(500).json({ message: e.message || "Error obteniendo servicio." });
   }
 };
@@ -118,14 +163,19 @@ exports.findAll = async (req, res) => {
     const servicios = await Servicio.findAll({ where, order: [["fecha_creacion", "DESC"]] });
     return res.json(servicios);
   } catch (e) {
+    console.error("❌ findAll servicio:", e);
     return res.status(500).json({ message: e.message || "Error listando servicios." });
   }
 };
 
+/**
+ * PATCH /api/servicio/:id/estado
+ * body: { estado, precio_final? }  (si tú usas precio_final en frontend, lo respetamos)
+ */
 exports.setEstado = async (req, res) => {
   try {
     const id_servicio = req.params.id;
-    const { estado, precio } = req.body || {};
+    const { estado, precio_final, precio } = req.body || {};
 
     const allowed = ["pendiente", "aceptado", "en_curso", "completado", "cancelado"];
     if (!allowed.includes(estado)) {
@@ -136,12 +186,17 @@ exports.setEstado = async (req, res) => {
     if (!servicio) return res.status(404).json({ message: "Servicio no encontrado." });
 
     const patch = { estado };
+
     if (estado === "completado") patch.fecha_completado = new Date();
+
+    // Compatibilidad: si tu frontend manda precio_final, lo guardamos en "precio"
+    if (precio_final !== undefined) patch.precio = precio_final;
     if (precio !== undefined) patch.precio = precio;
 
     await servicio.update(patch);
     return res.json(servicio);
   } catch (e) {
+    console.error("❌ setEstado servicio:", e);
     return res.status(500).json({ message: e.message || "Error actualizando estado." });
   }
 };
@@ -155,6 +210,7 @@ exports.remove = async (req, res) => {
     await servicio.destroy();
     return res.json({ ok: true });
   } catch (e) {
+    console.error("❌ remove servicio:", e);
     return res.status(500).json({ message: e.message || "Error eliminando servicio." });
   }
 };

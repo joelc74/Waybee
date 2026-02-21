@@ -2,12 +2,17 @@
   <ion-toolbar class="wb-toolbar">
     <div class="wb-topbar">
       <div class="wb-logo">
-        <img src="assets/Images/logo/waybee-logo-gris.png" alt="Waybee" />
+        <img [src]="logoSrc" alt="Waybee" />
       </div>
 
       <div class="wb-right">
         <ion-button fill="clear" class="wb-bell" aria-label="Notificaciones">
           <ion-icon name="notifications"></ion-icon>
+        </ion-button>
+
+        <!-- ✅ Salir -->
+        <ion-button fill="clear" class="wb-logout" aria-label="Cerrar sesión" (click)="logout()">
+          <ion-icon name="log-out-outline"></ion-icon>
         </ion-button>
 
         <div class="wb-avatar" aria-label="Conductor">
@@ -20,31 +25,167 @@
 
 <ion-content class="wb-content">
 
-  <!-- CENTRO: POOL (VISIBLE AUNQUE ESTÉ VACÍO) -->
-  <div class="wb-pool">
-    <div class="wb-pool-head">
-      <div class="wb-pool-title">Solicitudes</div>
-      <div class="wb-pool-sub">Cuando entren, aparecerán aquí</div>
+  <!-- =======================================
+       ✅ VISTA SERVICIO ACTIVO (aceptado/en_curso)
+       ======================================= -->
+  <ng-container *ngIf="activeServicio; else poolTpl">
+    <div class="wb-stage">
+      <div id="driverMap" class="wb-map"></div>
+
+      <div class="wb-active-wrap">
+        <div class="wb-active-card">
+          <div class="wb-active-head">
+            <div class="wb-active-title">
+              Servicio {{ activeServicio.tipo_servicio === 'viaje' ? 'Viaje' : 'Envío' }}
+            </div>
+
+            <div class="wb-active-status" [attr.data-state]="activeServicio.estado">
+              {{ activeServicio.estado }}
+            </div>
+          </div>
+
+          <div class="wb-active-row">
+            <div class="wb-active-k">Solicitante</div>
+            <div class="wb-active-v">{{ activeServicio.solicitanteNombre || 'Usuario' }}</div>
+          </div>
+
+          <div class="wb-active-row">
+            <div class="wb-active-k">Origen</div>
+            <div class="wb-active-v">{{ activeServicio.origen_direccion }}</div>
+          </div>
+
+          <div class="wb-active-row">
+            <div class="wb-active-k">Destino</div>
+            <div class="wb-active-v">{{ activeServicio.destino_direccion }}</div>
+          </div>
+
+          <div class="wb-active-metrics">
+            <div class="wb-metric">
+              <div class="wb-metric-k">Distancia</div>
+              <div class="wb-metric-v">{{ formatKm(activeServicio.distancia_km) }}</div>
+            </div>
+
+            <div class="wb-metric">
+              <div class="wb-metric-k">Precio</div>
+              <div class="wb-metric-v wb-strong">{{ formatPrice(activeServicio.precio) }}</div>
+            </div>
+          </div>
+
+          <div class="wb-active-actions">
+            <button
+              class="wb-btn wb-btn-primary"
+              type="button"
+              *ngIf="activeServicio.estado === 'aceptado'"
+              [disabled]="busy"
+              (click)="iniciar(activeServicio)"
+            >
+              Iniciar
+            </button>
+
+            <button
+              class="wb-btn wb-btn-danger"
+              type="button"
+              *ngIf="activeServicio.estado === 'en_curso'"
+              [disabled]="busy"
+              (click)="finalizar(activeServicio)"
+            >
+              Finalizar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- =======================================
+       ✅ POOL
+       ======================================= -->
+  <ng-template #poolTpl>
+    <div class="wb-pool">
+      <div class="wb-pool-head">
+        <div>
+          <div class="wb-pool-title">Solicitudes</div>
+          <div class="wb-pool-sub">Cuando entren, aparecerán aquí</div>
+        </div>
+
+        <!-- ✅ Actualizar (icono, estilo “usuario”, sin texto grande) -->
+        <ion-button
+          fill="clear"
+          class="wb-refresh"
+          aria-label="Actualizar"
+          (click)="refreshAll()"
+          [disabled]="busy"
+        >
+          <ion-icon name="refresh"></ion-icon>
+        </ion-button>
+      </div>
+
+      <div class="wb-empty" *ngIf="!loadingPool && pool.length === 0">
+        <ion-icon name="list-outline"></ion-icon>
+        <div class="wb-empty-title">Sin solicitudes</div>
+        <div class="wb-empty-sub">No hay solicitudes disponibles ahora mismo</div>
+      </div>
+
+      <div class="wb-loading" *ngIf="loadingPool">
+        Cargando solicitudes…
+      </div>
+
+      <div class="wb-req-list" *ngIf="pool.length > 0">
+        <div class="wb-req-card" *ngFor="let s of pool">
+          <div class="wb-req-top">
+            <div class="wb-req-type">
+              <ion-icon [name]="s.tipo_servicio === 'viaje' ? 'car-outline' : 'cube-outline'"></ion-icon>
+              <span>{{ s.tipo_servicio === 'viaje' ? 'Viaje' : 'Envío' }}</span>
+            </div>
+
+            <div class="wb-req-price">
+              {{ formatPrice(s.precio) }}
+            </div>
+          </div>
+
+          <div class="wb-req-row">
+            <div class="wb-req-k">Solicitante</div>
+            <div class="wb-req-v">{{ s.solicitanteNombre || 'Usuario' }}</div>
+          </div>
+
+          <div class="wb-req-row">
+            <div class="wb-req-k">Origen</div>
+            <div class="wb-req-v">{{ s.origen_direccion }}</div>
+          </div>
+
+          <div class="wb-req-row">
+            <div class="wb-req-k">Destino</div>
+            <div class="wb-req-v">{{ s.destino_direccion }}</div>
+          </div>
+
+          <div class="wb-req-footer">
+            <div class="wb-req-km">{{ formatKm(s.distancia_km) }}</div>
+
+            <button
+              class="wb-btn wb-btn-primary"
+              type="button"
+              (click)="accept(s)"
+              [disabled]="busy"
+            >
+              Aceptar
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="wb-empty">
-      <ion-icon name="list-outline"></ion-icon>
-      <div class="wb-empty-title">Sin solicitudes</div>
-      <div class="wb-empty-sub">No hay solicitudes disponibles ahora mismo</div>
+    <!-- BOTTOM NAV -->
+    <div class="wb-bottom-nav">
+      <button class="wb-bnav-item" type="button" (click)="goHistory()">
+        <div class="wb-bnav-icon"><ion-icon name="time"></ion-icon></div>
+        <div class="wb-bnav-label">Historial</div>
+      </button>
+
+      <button class="wb-bnav-item" type="button" (click)="goAccount()">
+        <div class="wb-bnav-icon"><ion-icon name="person"></ion-icon></div>
+        <div class="wb-bnav-label">Cuenta</div>
+      </button>
     </div>
-  </div>
-
-  <!-- BOTTOM NAV -->
-  <div class="wb-bottom-nav">
-    <button class="wb-bnav-item" type="button">
-      <div class="wb-bnav-icon"><ion-icon name="time"></ion-icon></div>
-      <div class="wb-bnav-label">Historial</div>
-    </button>
-
-    <button class="wb-bnav-item" type="button">
-      <div class="wb-bnav-icon"><ion-icon name="person"></ion-icon></div>
-      <div class="wb-bnav-label">Cuenta</div>
-    </button>
-  </div>
+  </ng-template>
 
 </ion-content>
