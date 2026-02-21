@@ -1,3 +1,4 @@
+// frontend/src/app/driver/driver.page.ts
 import { AfterViewInit, Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -48,6 +49,9 @@ export class DriverPage implements AfterViewInit {
   pool: Servicio[] = [];
   activeServicio: Servicio | null = null;
 
+  // ✅ Foto perfil (header)
+  profileImgUrl: string | null = null;
+
   // cache simple de usuarios {id_usuario: nombre}
   private userNameCache = new Map<number, string>();
 
@@ -69,6 +73,9 @@ export class DriverPage implements AfterViewInit {
   }
 
   ionViewDidEnter(): void {
+    // ✅ cargar foto de perfil (header)
+    this.loadProfileImg();
+
     this.refreshAll();
   }
 
@@ -91,6 +98,67 @@ export class DriverPage implements AfterViewInit {
     const u: any = (this.auth as any).getUser?.() || null;
     const id = Number(u?.id_usuario ?? u?.id);
     return Number.isFinite(id) && id > 0 ? id : null;
+  }
+
+  // =========================
+  // ✅ Foto perfil (header)
+  // =========================
+  private normalizeImgUrl(imgRaw: any): string | null {
+    const img = (imgRaw ?? '').toString().trim();
+    if (!img) return null;
+
+    // Si ya es URL absoluta, la dejamos.
+    if (/^https?:\/\//i.test(img)) {
+      return `${img}${img.includes('?') ? '&' : '?'}t=${Date.now()}`;
+    }
+
+    const base = this.apiUrl().replace(/\/$/, '');
+
+    // Si viene como "/images/xxx.jpg" (tu caso), lo pegamos directo al base.
+    if (img.startsWith('/')) {
+      return `${base}${img}?t=${Date.now()}`;
+    }
+
+    // Si viene como "images/xxx.jpg", le ponemos "/"
+    if (img.startsWith('images/')) {
+      return `${base}/${img}?t=${Date.now()}`;
+    }
+
+    // Si viene como nombre archivo "xxx.jpg", asumimos carpeta /images/
+    return `${base}/images/${img}?t=${Date.now()}`;
+  }
+
+  private async loadProfileImg(): Promise<void> {
+    const u: any = (this.auth as any).getUser?.() || null;
+
+    // 1) Intento directo desde sesión
+    const fromSession = this.normalizeImgUrl(u?.img_profile);
+    if (fromSession) {
+      this.profileImgUrl = fromSession;
+      return;
+    }
+
+    // 2) Si en sesión no viene, intentamos pedirlo al backend por id_usuario
+    const id = this.getDriverId();
+    if (!id) {
+      this.profileImgUrl = null;
+      return;
+    }
+
+    try {
+      const userDb = await this.http
+        .get<any>(`${this.apiUrl()}/api/usuario/${id}`, { headers: this.getHeadersJson() })
+        .toPromise();
+
+      this.profileImgUrl = this.normalizeImgUrl(userDb?.img_profile);
+    } catch (e) {
+      // Si falla, simplemente dejamos el icono
+      this.profileImgUrl = null;
+    }
+  }
+
+  onProfileImgError(): void {
+    this.profileImgUrl = null;
   }
 
   // =========================
@@ -176,9 +244,6 @@ export class DriverPage implements AfterViewInit {
         .subscribe({
           next: async (rows) => {
             const list = rows || [];
-
-            // si hay servicio activo, “bloqueamos” visualmente el pool pero lo seguimos mostrando en background
-            // (si prefieres ocultarlo del todo, lo controlas en el HTML)
             const enriched: Servicio[] = [];
             for (const s of list) enriched.push(await this.enrichServicio(s));
 

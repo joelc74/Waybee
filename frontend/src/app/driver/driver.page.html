@@ -1,3 +1,4 @@
+<!-- frontend/src/app/driver/driver.page.html -->
 <ion-header class="wb-header" [translucent]="true">
   <ion-toolbar class="wb-toolbar">
     <div class="wb-topbar">
@@ -5,7 +6,8 @@
         <img [src]="logoSrc" alt="Waybee" />
       </div>
 
-      <div class="wb-right">
+      <!-- ✅ Igual que Home/Historial: botones compactos + avatar con foto -->
+      <div class="wb-right-icons">
         <ion-button fill="clear" class="wb-bell" aria-label="Notificaciones">
           <ion-icon name="notifications"></ion-icon>
         </ion-button>
@@ -15,8 +17,18 @@
           <ion-icon name="log-out-outline"></ion-icon>
         </ion-button>
 
-        <div class="wb-avatar" aria-label="Conductor">
-          <ion-icon name="person"></ion-icon>
+        <!-- ✅ Avatar con foto -->
+        <div class="wb-user" aria-label="Conductor">
+          <img
+            *ngIf="profileImgUrl; else userIconTpl"
+            [src]="profileImgUrl"
+            class="wb-user-img"
+            (error)="onProfileImgError()"
+            alt="Perfil"
+          />
+          <ng-template #userIconTpl>
+            <ion-icon name="person"></ion-icon>
+          </ng-template>
         </div>
       </div>
     </div>
@@ -108,7 +120,6 @@
           <div class="wb-pool-sub">SOLICITUDES:</div>
         </div>
 
-        <!-- ✅ Actualizar (icono, estilo “usuario”, sin texto grande) -->
         <ion-button
           fill="clear"
           class="wb-refresh"
@@ -174,7 +185,6 @@
       </div>
     </div>
 
-    <!-- BOTTOM NAV -->
     <div class="wb-bottom-nav">
       <button class="wb-bnav-item" type="button" (click)="goHistory()">
         <div class="wb-bnav-icon"><ion-icon name="time"></ion-icon></div>
