@@ -65,7 +65,17 @@
       <div class="wb-hitem" *ngFor="let s of servicios">
         <!-- TOP -->
         <div class="wb-h-top">
-          <div class="wb-chip" [class.pending]="(s.estado || '').toLowerCase() === 'pendiente'">
+          <div
+            class="wb-chip"
+            [class.pending]="(s.estado || '').toLowerCase() === 'pendiente'"
+            [class.pendiente]="(s.estado || '').toLowerCase() === 'pendiente'"
+            [class.aceptado]="(s.estado || '').toLowerCase() === 'aceptado'"
+            [class.en_curso]="(s.estado || '').toLowerCase() === 'en_curso'"
+            [class.encurso]="(s.estado || '').toLowerCase() === 'en_curso'"
+            [class.completado]="(s.estado || '').toLowerCase() === 'completado'"
+            [class.finalizado]="(s.estado || '').toLowerCase() === 'finalizado'"
+            [class.cancelado]="(s.estado || '').toLowerCase() === 'cancelado'"
+          >
             {{ formatEstado(s.estado) }}
           </div>
 

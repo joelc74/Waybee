@@ -171,10 +171,41 @@
   border-radius: 999px;
   background: rgba(0,0,0,0.06);
   color:#111;
+  border: 1px solid rgba(0,0,0,0.06);
 }
 
-.wb-chip.pending{
+/* ✅ Estados */
+.wb-chip.pending,
+.wb-chip.pendiente {
   background: rgba(247,196,0,0.35);
+  color: #111;
+  border-color: rgba(247,196,0,0.55);
+}
+
+.wb-chip.aceptado {
+  background: rgba(22,41,214,0.16);      /* azul waybee suave */
+  color: #1629d6;
+  border-color: rgba(22,41,214,0.30);
+}
+
+.wb-chip.en_curso,
+.wb-chip.encurso {
+  background: rgba(236, 240, 6, 0.1);          /* marengo/negro suave */
+  color: #3e2dd8;
+  border-color: rgba(0,0,0,0.18);
+}
+
+.wb-chip.completado,
+.wb-chip.finalizado {
+  background: rgba(46,125,50,0.18);      /* verde suave */
+  color: #1b5e20;
+  border-color: rgba(46,125,50,0.30);
+}
+
+.wb-chip.cancelado {
+  background: rgba(211,47,47,0.18);      /* rojo suave */
+  color: #b71c1c;
+  border-color: rgba(211,47,47,0.30);
 }
 
 .wb-meta{

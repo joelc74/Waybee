@@ -158,7 +158,19 @@ exports.findAll = async (req, res) => {
     if (estado) where.estado = estado;
     if (tipo_servicio) where.tipo_servicio = tipo_servicio;
     if (id_usuario) where.id_usuario = id_usuario;
-    if (id_conductor) where.id_conductor = id_conductor;
+
+    // ✅ FIX: si el frontend manda id_usuario (8/9) en id_conductor,
+    // lo resolvemos a id_conductor real (1/2) como en accept.
+    if (id_conductor) {
+      const realConductorId = await resolveConductorId(id_conductor, null);
+
+      // Si no existe conductor asociado, devolvemos vacío (no 500)
+      if (!realConductorId) {
+        return res.json([]);
+      }
+
+      where.id_conductor = realConductorId;
+    }
 
     const servicios = await Servicio.findAll({ where, order: [["fecha_creacion", "DESC"]] });
     return res.json(servicios);
