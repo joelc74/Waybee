@@ -153,6 +153,74 @@
           </ng-template>
         </div>
 
+        <!-- ✅ CARD ENVÍO (NUEVO) -->
+        <div class="wb-envio-card" *ngIf="selectedService === 'envio'">
+          <div class="wb-envio-title">Datos del paquete</div>
+
+          <div class="wb-envio-grid">
+            <label class="wb-envio-field">
+              <span>Peso (kg)</span>
+              <input
+                class="wb-envio-input"
+                type="number"
+                min="0.1"
+                step="0.1"
+                [value]="envioPesoKg ?? ''"
+                (input)="onEnvioPesoInput($event)"
+                placeholder="Ej: 2.5"
+              />
+            </label>
+
+            <label class="wb-envio-field">
+              <span>Ancho (cm)</span>
+              <input
+                class="wb-envio-input"
+                type="number"
+                min="1"
+                step="1"
+                [value]="envioAnchoCm ?? ''"
+                (input)="onEnvioDimInput('ancho', $event)"
+                placeholder="Ej: 20"
+              />
+            </label>
+
+            <label class="wb-envio-field">
+              <span>Largo (cm)</span>
+              <input
+                class="wb-envio-input"
+                type="number"
+                min="1"
+                step="1"
+                [value]="envioLargoCm ?? ''"
+                (input)="onEnvioDimInput('largo', $event)"
+                placeholder="Ej: 30"
+              />
+            </label>
+
+            <label class="wb-envio-field">
+              <span>Alto (cm)</span>
+              <input
+                class="wb-envio-input"
+                type="number"
+                min="1"
+                step="1"
+                [value]="envioAltoCm ?? ''"
+                (input)="onEnvioDimInput('alto', $event)"
+                placeholder="Ej: 15"
+              />
+            </label>
+          </div>
+
+          <label class="wb-envio-fragil">
+            <input type="checkbox" [checked]="envioFragil" (change)="onEnvioFragilChange($event)" />
+            <span>Frágil</span>
+          </label>
+
+          <div class="wb-envio-hint">
+            Base 8 € + (km) + (peso/volumen). Dimensiones en cm.
+          </div>
+        </div>
+
         <!-- CARD NOMBRE RUTA -->
         <div class="wb-route-name-card" *ngIf="showFavNameCard">
           <div class="wb-route-name-title">Nombre de la ruta</div>

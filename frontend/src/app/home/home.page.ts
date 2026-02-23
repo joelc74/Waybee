@@ -77,6 +77,13 @@ export class HomePage implements AfterViewInit {
   private readonly perKm = 0.97;
   private readonly feePct = 0.12;
 
+  // ✅ ENVÍO: parámetros de cálculo
+  private readonly envioBase = 8.0;           // base mínima
+  private readonly envioPerKm = 0.55;         // €/km
+  private readonly envioDivisorVol = 5000;    // cm3 / 5000 = kg volumétrico
+  private readonly envioPerKgEq = 0.90;       // €/kg equivalente
+  private readonly envioFragilExtra = 1.50;   // extra si frágil
+
   distanceLabel = '';
   priceLabel = '';
   lastKm = 0;
@@ -85,8 +92,27 @@ export class HomePage implements AfterViewInit {
   paymentDone = false;
   private currentRequestKey: string | null = null;
 
+  // ✅ ENVÍO: datos del paquete
+  envioPesoKg: number | null = null;
+  envioAnchoCm: number | null = null;
+  envioLargoCm: number | null = null;
+  envioAltoCm: number | null = null;
+  envioFragil = false;
+
+  private isEnvioFormValid(): boolean {
+    const p = Number(this.envioPesoKg ?? 0);
+    const a = Number(this.envioAnchoCm ?? 0);
+    const l = Number(this.envioLargoCm ?? 0);
+    const h = Number(this.envioAltoCm ?? 0);
+    return p > 0 && a > 0 && l > 0 && h > 0;
+  }
+
+  // ✅ canPay ahora vale para viaje y envío (sin tocar tu flujo de botones)
   get canPay(): boolean {
-    return this.selectedService === 'viaje' && this.lastKm > 0 && this.lastPrice > 0;
+    if (this.selectedService === 'viaje') {
+      return this.lastKm > 0 && this.lastPrice > 0;
+    }
+    return this.lastKm > 0 && this.lastPrice > 0 && this.isEnvioFormValid();
   }
 
   /* =========================
@@ -252,7 +278,7 @@ export class HomePage implements AfterViewInit {
     }
 
     const payload: servicio_create_payload = {
-      tipo_servicio: 'viaje',
+      tipo_servicio: (this.selectedService === 'envio' ? 'envio' : 'viaje'),
       id_usuario,
       origen_direccion: this.locationQuery || '',
       destino_direccion: this.destQuery || '',
@@ -263,6 +289,14 @@ export class HomePage implements AfterViewInit {
       distancia_km: Number(this.lastKm.toFixed(2)),
       precio: Number(this.lastPrice.toFixed(2)),
     };
+
+    // ✅ Si es ENVÍO, añadimos campos del paquete (sin romper tipado si no existen en la interfaz)
+    if (this.selectedService === 'envio') {
+      const dims = `${this.envioAnchoCm}x${this.envioLargoCm}x${this.envioAltoCm} cm`;
+      (payload as any).peso_paquete = Number((this.envioPesoKg ?? 0).toFixed(2));
+      (payload as any).dimensiones_paquete = dims;
+      (payload as any).fragil = this.envioFragil ? 1 : 0;
+    }
 
     this.payBusy = true;
 
@@ -816,19 +850,89 @@ export class HomePage implements AfterViewInit {
     this.resetRequestedState();
   }
 
-  private updateFarePanel(km: number): void {
-    const subtotal = this.baseFare + km * this.perKm;
-    const total = subtotal * (1 + this.feePct);
+  // ✅ Cálculo envío (paso a paso interno)
+  private computeEnvioTotal(km: number): number {
+    const peso = Number(this.envioPesoKg ?? 0);
+    const ancho = Number(this.envioAnchoCm ?? 0);
+    const largo = Number(this.envioLargoCm ?? 0);
+    const alto = Number(this.envioAltoCm ?? 0);
 
+    const volCm3 = ancho * largo * alto;              // cm3
+    const pesoVolKg = volCm3 / this.envioDivisorVol;  // kg volumétrico
+    const kgEq = Math.max(peso, pesoVolKg);           // kg equivalente
+
+    const base = this.envioBase;
+    const dist = km * this.envioPerKm;
+    const carga = kgEq * this.envioPerKgEq;
+    const fragil = this.envioFragil ? this.envioFragilExtra : 0;
+
+    const total = base + dist + carga + fragil;
+
+    // redondeo a 2 decimales
+    return Math.round(total * 100) / 100;
+  }
+
+  private updateFarePanel(km: number): void {
     this.lastKm = km;
-    this.lastPrice = total;
+
+    if (this.selectedService === 'viaje') {
+      const subtotal = this.baseFare + km * this.perKm;
+      const total = subtotal * (1 + this.feePct);
+
+      this.lastPrice = total;
+
+      this.distanceLabel = `Distancia: ${km.toFixed(2)} km`;
+      this.priceLabel = `Precio final: ${total.toFixed(2)} €`;
+      return;
+    }
+
+    // ✅ ENVÍO
+    const totalEnvio = this.computeEnvioTotal(km);
+    this.lastPrice = totalEnvio;
 
     this.distanceLabel = `Distancia: ${km.toFixed(2)} km`;
-    this.priceLabel = `Precio final: ${total.toFixed(2)} €`;
+    this.priceLabel = `Precio envío: ${totalEnvio.toFixed(2)} €`;
+  }
+
+  // ✅ ENVÍO: handlers (recalcula precio si ya hay ruta)
+  private recalcIfRouteReady(): void {
+    if (this.lastKm > 0) {
+      this.updateFarePanel(this.lastKm);
+    }
+  }
+
+  onEnvioPesoInput(ev: any): void {
+    const v = (ev?.target?.value ?? '').toString();
+    const n = Number(v);
+    this.envioPesoKg = Number.isFinite(n) && n > 0 ? n : null;
+    this.recalcIfRouteReady();
+  }
+
+  onEnvioDimInput(which: 'ancho' | 'largo' | 'alto', ev: any): void {
+    const v = (ev?.target?.value ?? '').toString();
+    const n = Number(v);
+    const val = Number.isFinite(n) && n > 0 ? n : null;
+
+    if (which === 'ancho') this.envioAnchoCm = val;
+    if (which === 'largo') this.envioLargoCm = val;
+    if (which === 'alto') this.envioAltoCm = val;
+
+    this.recalcIfRouteReady();
+  }
+
+  onEnvioFragilChange(ev: any): void {
+    const checked = !!(ev?.target?.checked);
+    this.envioFragil = checked;
+    this.recalcIfRouteReady();
   }
 
   setService(mode: ServiceMode): void {
     this.selectedService = mode;
+
+    // ✅ si ya hay ruta calculada, recalcula el panel al cambiar de pestaña
+    if (this.lastKm > 0) {
+      this.updateFarePanel(this.lastKm);
+    }
   }
 
   goFavorites(): void {
@@ -842,6 +946,4 @@ export class HomePage implements AfterViewInit {
   goAccount(): void {
     this.router.navigateByUrl('/cuenta');
   }
-
-
 }
