@@ -9,6 +9,7 @@ export type WaybeeRole = 'user' | 'driver' | 'admin';
   providedIn: 'root'
 })
 export class AuthService {
+
   private readonly tokenKey = 'waybee_token';
   private readonly roleKey = 'waybee_role';
   private readonly userKey = 'waybee_user';
@@ -16,37 +17,35 @@ export class AuthService {
   constructor(private http: HttpClient) {}
 
   login(email: string, password: string): Observable<any> {
-    return this.http
-      .post<any>(`${environment.apiUrl}/api/auth/login`, { email, password })
-      .pipe(
-        tap((res) => {
-          // Guardamos sesión si viene token + user
-          if (res?.token) {
-            const role = (res?.user?.rol || res?.user?.role) as WaybeeRole;
-            if (role) {
-              this.saveSession(res.token, role, res.user);
-            }
+    return this.http.post<any>(
+      `${environment.apiUrl}/api/auth/login`,
+      { email, password }
+    ).pipe(
+      tap((res) => {
+        if (res?.token) {
+          const role = (res?.user?.rol || res?.user?.role) as WaybeeRole;
+          if (role) {
+            this.saveSession(res.token, role, res.user);
           }
-        })
-      );
+        }
+      })
+    );
   }
 
-  /**
-   * ✅ MISMO nombre: registerUsuario
-   * ✅ Ahora acepta:
-   *  - FormData (para foto + multipart)
-   *  - Objeto normal (registro sin foto)
-   */
-  registerUsuario(formData: FormData): Observable<any>;
-  registerUsuario(data: { nombre: string; email: string; telefono?: string; password: string }): Observable<any>;
-  registerUsuario(payload: FormData | { nombre: string; email: string; telefono?: string; password: string }): Observable<any> {
-    // ✅ Si viene FormData -> endpoint de registro multipart
+  registerUsuario(payload: FormData | {
+    nombre: string;
+    email: string;
+    telefono?: string;
+    password: string;
+  }): Observable<any> {
+
     if (payload instanceof FormData) {
-      return this.http.post<any>(`${environment.apiUrl}/api/auth/register`, payload);
+      return this.http.post<any>(
+        `${environment.apiUrl}/api/auth/register`,
+        payload
+      );
     }
 
-    // ✅ Si viene objeto -> endpoint antiguo (sin foto)
-    // OJO: aquí dejo tu estructura habitual. Ajusta el endpoint si en tu backend el registro es otro.
     const body = {
       nombre: payload.nombre,
       email: payload.email,
@@ -56,7 +55,10 @@ export class AuthService {
       activo: true
     };
 
-    return this.http.post<any>(`${environment.apiUrl}/api/usuario`, body);
+    return this.http.post<any>(
+      `${environment.apiUrl}/api/usuario`,
+      body
+    );
   }
 
   saveSession(token: string, role: WaybeeRole, user?: any) {
@@ -65,20 +67,6 @@ export class AuthService {
 
     if (user) {
       localStorage.setItem(this.userKey, JSON.stringify(user));
-    }
-  }
-
-  setUser(user: any) {
-    localStorage.setItem(this.userKey, JSON.stringify(user));
-  }
-
-  getUser<T = any>(): T | null {
-    const raw = localStorage.getItem(this.userKey);
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw) as T;
-    } catch {
-      return null;
     }
   }
 
@@ -100,16 +88,23 @@ export class AuthService {
     return !!this.getToken();
   }
 
-  /**
-   * ✅ URL lista para pintar en <img [src]>
-   * img_profile esperado: "/images/xxxx.jpg" o "images/xxxx.jpg" o URL completa
-   */
+  getUser<T = any>(): T | null {
+    const raw = localStorage.getItem(this.userKey);
+    if (!raw) return null;
+
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      return null;
+    }
+  }
+
   getProfileImageUrl(): string | null {
     const user: any = this.getUser();
     const img = user?.img_profile;
     if (!img) return null;
 
-    if (typeof img === 'string' && /^https?:\/\//i.test(img)) return img;
+    if (/^https?:\/\//i.test(img)) return img;
 
     const normalized = img.startsWith('/') ? img : `/${img}`;
     return `${environment.apiUrl.replace(/\/$/, '')}${normalized}`;

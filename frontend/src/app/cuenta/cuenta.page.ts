@@ -162,48 +162,43 @@ export class CuentaPage {
   // GUARDAR TODO
   // =========================
   saveAll(): void {
-    if (this.busy) return;
+  if (this.busy) return;
+  const id = this.getUserId();
+  if (!id) return;
 
-    const id = this.getUserId();
-    if (!id) return;
+  const fd = new FormData();
+  fd.append('email', this.form.email.trim());
+  fd.append('telefono', this.form.telefono.trim());
 
-    const email = (this.form.email || '').trim();
-    const telefono = (this.form.telefono || '').trim();
-
-    if (!email) return;
-
-    const fd = new FormData();
-    fd.append('email', email);
-    fd.append('telefono', telefono);
-
-    if (this.selectedFile) {
-      // backend: upload.single("file")
-      fd.append('file', this.selectedFile);
-    }
-
-    this.busy = true;
-
-    this.http.put<any>(`${this.apiUrl()}/api/usuario/${id}`, fd, { headers: this.getHeadersMultipart() })
-      .subscribe({
-        next: (updated) => {
-          const current = (this.auth as any).getUser?.() || {};
-          const merged = { ...current, ...updated };
-          (this.auth as any).setUser?.(merged);
-
-          this.user = merged;
-          this.selectedFile = null;
-
-          this.reloadProfileImg();
-          this.fetchUserFromApi(id);
-
-          this.busy = false;
-        },
-        error: (err) => {
-          console.error('❌ Error guardando cambios (email/teléfono/foto):', err);
-          this.busy = false;
-        }
-      });
+  if (this.selectedFile) {
+    // CAMBIO 1: Debe ser 'file' para que coincida con tu backend
+    fd.append('file', this.selectedFile); 
   }
+
+  this.busy = true;
+
+  // CAMBIO 2: Solo el Token, SIN Content-Type manual
+  const token = (this.auth as any).getToken?.();
+  const headers = new HttpHeaders({
+    'Authorization': `Bearer ${token}`
+  });
+
+  this.http.put<any>(`${this.apiUrl()}/api/usuario/${id}`, fd, { headers })
+    .subscribe({
+      next: (updated) => {
+        (this.auth as any).setUser?.(updated);
+        this.user = updated;
+        this.selectedFile = null;
+        this.reloadProfileImg(); // Ahora funcionará bien
+        this.busy = false;
+        alert('¡Perfil actualizado con éxito!');
+      },
+      error: (err) => {
+        console.error('❌ Error 400:', err);
+        this.busy = false;
+      }
+    });
+}
 
   // =========================
   // ✅ CONFIRMACIÓN BORRADO (CARD)

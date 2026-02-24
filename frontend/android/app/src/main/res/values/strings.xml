@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Waybee</string>
+    <string name="title_activity_main">Waybee</string>
+    <string name="package_name">com.waybee.app</string>
+    <string name="custom_url_scheme">com.waybee.app</string>
+</resources>
