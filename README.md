@@ -6,6 +6,10 @@ Waybee es una aplicación híbrida desarrollada como Proyecto Final de Ciclo Sup
 
 ---
 
+## NOTA IMPORTANTE:
+El envireonment.ts está apuntando a la VPN del servidor de Isard utilizado para el despliegue: http://100.81.133.1:8080.
+Por ello si se desea realizar pruebas al arrancar la DDBB, debe cambiar ese valor a http://localhost:8080.
+
 ## 🏗️ Arquitectura General
 
 Monorepo estructurado en dos bloques principales:
