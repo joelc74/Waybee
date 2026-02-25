@@ -23,17 +23,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
-// ✅ Sync BD (DEV)
+// Sync BD (DEV)
 db.sequelize.sync({ alter: true })
   .then(() => console.log("✅ Base de datos sincronizada"))
   .catch(err => console.error("❌ Error al sincronizar:", err));
 
-// ✅ Root
+// Root
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to Waybee App" });
 });
 
-// ✅ Rutas (arquitectura nueva)
+// Rutas 
 require("./routes/auth.routes")(app);
 require("./routes/usuario.routes")(app);
 require("./routes/conductor.routes")(app);
@@ -44,7 +44,7 @@ require("./routes/valoracion.routes")(app);
 app.use('/favoritos', require('./routes/favorito.routes'));
 
 
-// ✅ Manejador de errores (incluye Multer)
+// Manejador de errores (incluye Multer)
 app.use((err, req, res, next) => {
   if (err && err.name === "MulterError") {
     if (err.code === "LIMIT_FILE_SIZE") {
@@ -60,7 +60,7 @@ app.use((err, req, res, next) => {
   next();
 });
 
-// ✅ Server
+// Server
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);

@@ -20,7 +20,7 @@ export type servicio_create_payload = {
 
   distancia_km?: number | null;
 
-  // ✅ SOLO PRECIO
+  // SOLO PRECIO
   precio?: number | null;
 
   // envio

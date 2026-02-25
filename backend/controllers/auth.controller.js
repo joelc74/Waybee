@@ -47,8 +47,8 @@ exports.login = async (req, res) => {
   }
 };
 
-// ✅ Registro SOLO para usuarios (no conductores)
-// ✅ Soporta multipart/form-data: req.file (img_profile) + req.body (resto)
+//  Registro SOLO para usuarios (no conductores)
+//  Soporta multipart/form-data: req.file (img_profile) + req.body (resto)
 exports.register = async (req, res) => {
   try {
     const { nombre, email, telefono, password } = req.body || {};
@@ -66,7 +66,7 @@ exports.register = async (req, res) => {
 
     const password_hash = await bcrypt.hash(password, 12);
 
-    // ✅ Si se subió imagen, guardamos la ruta pública
+    // Si se subió imagen, guardamos la ruta pública
     // index.js ya sirve: /images -> backend/public/images
     const img_profile = req.file ? `/images/${req.file.filename}` : null;
 
@@ -90,7 +90,7 @@ exports.register = async (req, res) => {
         nombre: user.nombre,
         email: user.email,
         rol: user.rol,
-        img_profile: user.img_profile || null, // ✅
+        img_profile: user.img_profile || null, 
       },
     });
   } catch (e) {

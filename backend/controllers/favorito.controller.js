@@ -1,9 +1,9 @@
 const db = require("../models");
 
-// en tu models/index.js el modelo es db.favorito (minúsculas)
+//models/index.js el modelo es db.favorito 
 const favorito = db.favorito;
 
-// tu middleware deja req.user = user (sequelize) y también req.jwt
+// middleware deja req.user = user (sequelize) y también req.jwt
 function getuserid(req) {
   return req.user?.id_usuario ?? req.user?.id ?? req.userId ?? null;
 }

@@ -6,16 +6,16 @@ module.exports = app => {
   const usuario = require("../controllers/usuario.controller");
   const upload = require("../middleware/upload");
 
-  // Crear usuario (admite foto opcional en multipart: file)
+  // Create usuario (admite foto opcional en multipart: file)
   router.post("/", upload.single("file"), usuario.create);
 
-  // Listar usuarios
+  // Obtener usuarios
   router.get("/", usuario.findAll);
 
   // Obtener usuario por id
   router.get("/:id", usuario.findOne);
 
-  // ✅ Update con multipart (email/teléfono) + foto opcional
+  // Update con multipart (email/teléfono) + foto opcional
   router.put("/:id", upload.single("file"), usuario.update);
 
   // Eliminar usuario

@@ -3,19 +3,19 @@ module.exports = app => {
   const upload = require("../middleware/upload.js");
   const router = require("express").Router();
 
-  // Create a new conductor (opcional: file)
+  // Create nuevo conductor (opcional: file)
   router.post("/", upload.single("file"), conductor.create);
 
-  // Retrieve all conductores
+  // Obtener los conductores
   router.get("/", conductor.findAll);
 
-  // Retrieve a single conductor with id
+  // Retrieve un conductor with id
   router.get("/:id", conductor.findOne);
 
-  // Update a conductor with id
+  // Update un conductor por id
   router.put("/:id", conductor.update);
 
-  // Delete a conductor with id
+  // Delete un conductor por id
   router.delete("/:id", conductor.remove);
 
   app.use("/api/conductor", router);

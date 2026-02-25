@@ -6,18 +6,18 @@
         <img [src]="logoSrc" alt="Waybee" />
       </div>
 
-      <!-- ✅ Igual que Home/Historial: botones compactos + avatar con foto -->
+      <!--  Igual que Home/Historial: botones compactos + avatar con foto -->
       <div class="wb-right-icons">
         <ion-button fill="clear" class="wb-bell" aria-label="Notificaciones">
           <ion-icon name="notifications"></ion-icon>
         </ion-button>
 
-        <!-- ✅ Salir -->
+        <!--  Salir -->
         <ion-button fill="clear" class="wb-logout" aria-label="Cerrar sesión" (click)="logout()">
           <ion-icon name="log-out-outline"></ion-icon>
         </ion-button>
 
-        <!-- ✅ Avatar con foto -->
+        <!--  Avatar con foto -->
         <div class="wb-user" aria-label="Conductor">
           <img
             *ngIf="profileImgUrl; else userIconTpl"
@@ -38,7 +38,7 @@
 <ion-content class="wb-content">
 
   <!-- =======================================
-       ✅ VISTA SERVICIO ACTIVO (aceptado/en_curso)
+        VISTA SERVICIO ACTIVO (aceptado/en_curso)
        ======================================= -->
   <ng-container *ngIf="activeServicio; else poolTpl">
     <div class="wb-stage">
@@ -110,7 +110,7 @@
   </ng-container>
 
   <!-- =======================================
-       ✅ POOL
+        POOL DE SOLICITUDES
        ======================================= -->
   <ng-template #poolTpl>
     <div class="wb-pool">

@@ -17,18 +17,16 @@ const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
-// ✅ MODELOS (todo en minúsculas)
+// MODELOS 
 db.usuario = require("./usuario.model.js")(sequelize, Sequelize);
 db.conductor = require("./conductor.model.js")(sequelize, Sequelize);
 db.vehiculo = require("./vehiculo.model.js")(sequelize, Sequelize);
 db.servicio = require("./servicio.model.js")(sequelize, Sequelize);
 db.pago = require("./pago.model.js")(sequelize, Sequelize);
 db.valoracion = require("./valoracion.model.js")(sequelize, Sequelize);
-
-// ✅ Favorito (ya NO usa DataTypes)
 db.favorito = require("./favorito.model.js")(sequelize, Sequelize);
 
-// ✅ Asociaciones
+// Asociaciones
 Object.keys(db).forEach((modelName) => {
   if (db[modelName] && db[modelName].associate) {
     db[modelName].associate(db);

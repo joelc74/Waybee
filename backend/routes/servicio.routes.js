@@ -9,7 +9,7 @@ module.exports = app => {
   // GET /api/servicio/pool?tipo_servicio=viaje|envio
   router.get("/pool", servicio.pool);
 
-  // Aceptar servicio (atómico)
+  // Aceptar servicio
   // POST /api/servicio/:id/accept  body: { id_conductor }
   router.post("/:id/accept", servicio.accept);
 
@@ -22,9 +22,6 @@ module.exports = app => {
 
   // Obtener uno
   router.get("/:id", servicio.findOne);
-
-  // (Opcional) Update general si lo implementas
-  // router.put("/:id", servicio.update);
 
   // Eliminar
   router.delete("/:id", servicio.remove);

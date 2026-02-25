@@ -33,7 +33,7 @@ export class CuentaPage {
 
   selectedFile: File | null = null;
 
-  // ✅ Confirmación borrado
+  // 🛑 Confirmación borrado
   showDeleteCard = false;
   deleteText = '';
 
@@ -171,13 +171,11 @@ export class CuentaPage {
   fd.append('telefono', this.form.telefono.trim());
 
   if (this.selectedFile) {
-    // CAMBIO 1: Debe ser 'file' para que coincida con tu backend
     fd.append('file', this.selectedFile); 
   }
 
   this.busy = true;
 
-  // CAMBIO 2: Solo el Token, SIN Content-Type manual
   const token = (this.auth as any).getToken?.();
   const headers = new HttpHeaders({
     'Authorization': `Bearer ${token}`
@@ -189,7 +187,7 @@ export class CuentaPage {
         (this.auth as any).setUser?.(updated);
         this.user = updated;
         this.selectedFile = null;
-        this.reloadProfileImg(); // Ahora funcionará bien
+        this.reloadProfileImg(); 
         this.busy = false;
         alert('¡Perfil actualizado con éxito!');
       },
@@ -201,7 +199,7 @@ export class CuentaPage {
 }
 
   // =========================
-  // ✅ CONFIRMACIÓN BORRADO (CARD)
+  // 🛑 CONFIRMACIÓN BORRADO (CARD)
   // =========================
   openDeleteCard(): void {
     this.deleteText = '';
@@ -223,7 +221,7 @@ export class CuentaPage {
   }
 
   // =========================
-  // ELIMINAR CUENTA (REAL)
+  // 🛑 ELIMINAR CUENTA (REAL)
   // =========================
   private deleteAccount(): void {
     if (this.busy) return;

@@ -87,13 +87,12 @@ export class HistorialPage {
     });
   }
 
-  // ---------- Helpers ----------
   asNumber(v: any): number | null {
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
   }
 
-  // Precio único (compat): precio -> precio_final -> precio_estimado
+  // Precio único (compat): precio -> precio_final
   getPrecio(s: AnyRow): number | null {
     const p =
       (s?.precio !== undefined ? s.precio : undefined) ??

@@ -56,7 +56,7 @@ module.exports = (sequelize, Sequelize) => {
     usuario.hasMany(db.servicio, { foreignKey: "id_usuario", as: "servicios" });
     usuario.hasMany(db.valoracion, { foreignKey: "id_usuario", as: "valoraciones_emitidas" });
 
-    // ✅ FAVORITOS
+    //FAVORITOS
     usuario.hasMany(db.favorito, {
       foreignKey: "id_usuario",
       as: "favoritos",

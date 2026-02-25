@@ -12,7 +12,7 @@ exports.create = async (req, res) => {
       return res.status(400).json({ message: "nombre y email son obligatorios." });
     }
 
-    // password: puedes enviar password (plano) o password_hash (ya hasheado)
+    // password
     let password_hash = body.password_hash;
     if (!password_hash && body.password) {
       password_hash = await bcrypt.hash(body.password, 12);
@@ -21,7 +21,7 @@ exports.create = async (req, res) => {
       return res.status(400).json({ message: "password o password_hash es obligatorio." });
     }
 
-    // ✅ si viene archivo (multipart), guardamos ruta en img_profile
+    // si viene archivo (multipart), guardamos ruta en img_profile
     const img_profile = req.file?.filename ? `/images/${req.file.filename}` : null;
 
     const usuario = await Usuario.create({
@@ -83,16 +83,15 @@ exports.update = async (req, res) => {
     const usuario = await Usuario.findByPk(id);
     if (!usuario) return res.status(404).json({ message: "Usuario no encontrado." });
 
-    // ✅ si llega archivo, actualizamos img_profile
+    // si llega archivo, actualizamos img_profile
     const newImgProfile = req.file?.filename ? `/images/${req.file.filename}` : null;
 
-    // Si llega password, re-hash (aunque luego no lo uses en UI)
+    
     if (body.password) {
       body.password_hash = await bcrypt.hash(body.password, 12);
       delete body.password;
     }
 
-    // Construimos patch sin pisar campos si no vienen
     const patch = {};
 
     if (body.nombre !== undefined) patch.nombre = body.nombre;
@@ -104,7 +103,7 @@ exports.update = async (req, res) => {
 
     if (body.password_hash !== undefined) patch.password_hash = body.password_hash;
 
-    // ✅ clave: solo si hay archivo
+    // solo si hay archivo
     if (newImgProfile) patch.img_profile = newImgProfile;
 
     await usuario.update(patch);

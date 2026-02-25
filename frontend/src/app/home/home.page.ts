@@ -77,7 +77,7 @@ export class HomePage implements AfterViewInit {
   private readonly perKm = 0.97;
   private readonly feePct = 0.12;
 
-  // ✅ ENVÍO: parámetros de cálculo
+  // ENVÍO: parámetros de cálculo
   private readonly envioBase = 8.0;           // base mínima
   private readonly envioPerKm = 0.55;         // €/km
   private readonly envioDivisorVol = 5000;    // cm3 / 5000 = kg volumétrico
@@ -92,7 +92,7 @@ export class HomePage implements AfterViewInit {
   paymentDone = false;
   private currentRequestKey: string | null = null;
 
-  // ✅ ENVÍO: datos del paquete
+  // ENVÍO: datos del paquete
   envioPesoKg: number | null = null;
   envioAnchoCm: number | null = null;
   envioLargoCm: number | null = null;
@@ -107,7 +107,7 @@ export class HomePage implements AfterViewInit {
     return p > 0 && a > 0 && l > 0 && h > 0;
   }
 
-  // ✅ canPay ahora vale para viaje y envío (sin tocar tu flujo de botones)
+  //  canPay ahora vale para viaje y envío
   get canPay(): boolean {
     if (this.selectedService === 'viaje') {
       return this.lastKm > 0 && this.lastPrice > 0;
@@ -290,7 +290,7 @@ export class HomePage implements AfterViewInit {
       precio: Number(this.lastPrice.toFixed(2)),
     };
 
-    // ✅ Si es ENVÍO, añadimos campos del paquete (sin romper tipado si no existen en la interfaz)
+    // ✅ Si es ENVÍO, añadimos campos del paquete
     if (this.selectedService === 'envio') {
       const dims = `${this.envioAnchoCm}x${this.envioLargoCm}x${this.envioAltoCm} cm`;
       (payload as any).peso_paquete = Number((this.envioPesoKg ?? 0).toFixed(2));
@@ -320,6 +320,8 @@ export class HomePage implements AfterViewInit {
 
   /* =========================
      MAPA / ROUTING + Persistencia solicitado
+     Utilizamos OPENSTREETMAP; Renderizamos con Leaflet y la busqueda con NOMINATIM
+     Rutas con leaflet routing machine
      ========================= */
   private map!: L.Map;
 

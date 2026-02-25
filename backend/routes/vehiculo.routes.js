@@ -3,19 +3,19 @@ module.exports = app => {
   const upload = require("../middleware/upload.js");
   const router = require("express").Router();
 
-  // Create a new vehiculo (opcional: file)
+  // Create nuevo vehiculo (opcional: file)
   router.post("/", upload.single("file"), vehiculo.create);
 
-  // Retrieve all vehiculos
+  // Obtener vehiculos
   router.get("/", vehiculo.findAll);
 
-  // Retrieve a single vehiculo with id
+  // Obtener un vehiculo por id
   router.get("/:id", vehiculo.findOne);
 
-  // Update a vehiculo with id
+  // Update un vehiculo por id
   router.put("/:id", vehiculo.update);
 
-  // Delete a vehiculo with id
+  // Delete un vehiculo por id
   router.delete("/:id", vehiculo.remove);
 
   app.use("/api/vehiculo", router);

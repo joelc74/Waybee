@@ -49,7 +49,7 @@ export class DriverPage implements AfterViewInit {
   pool: Servicio[] = [];
   activeServicio: Servicio | null = null;
 
-  // ✅ Foto perfil (header)
+  // Foto perfil (header)
   profileImgUrl: string | null = null;
 
   // cache simple de usuarios {id_usuario: nombre}
@@ -73,7 +73,7 @@ export class DriverPage implements AfterViewInit {
   }
 
   ionViewDidEnter(): void {
-    // ✅ cargar foto de perfil (header)
+    // Cargar foto de perfil (header)
     this.loadProfileImg();
 
     this.refreshAll();
@@ -101,7 +101,7 @@ export class DriverPage implements AfterViewInit {
   }
 
   // =========================
-  // ✅ Foto perfil (header)
+  // Foto perfil (header)
   // =========================
   private normalizeImgUrl(imgRaw: any): string | null {
     const img = (imgRaw ?? '').toString().trim();
@@ -344,7 +344,7 @@ export class DriverPage implements AfterViewInit {
   }
 
   // =========================
-  // Enriquecimiento: nombre solicitante
+  // Nombre Solicitante
   // =========================
   private async enrichServicio(s: Servicio): Promise<Servicio> {
     const idu = Number(s.id_usuario);

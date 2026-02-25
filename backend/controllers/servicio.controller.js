@@ -3,8 +3,8 @@ const Servicio = db.servicio;
 
 /**
  * Resuelve el id_conductor REAL (tabla conductor) a partir de lo que mande el frontend.
- * - Si te mandan un id_conductor válido -> lo usamos.
- * - Si te mandan un id_usuario (rol driver) -> buscamos conductor por id_usuario y devolvemos su id_conductor.
+ * - Si manda un id_conductor válido -> lo usamos.
+ * - Si manda un id_usuario (rol driver) -> buscamos conductor por id_usuario y devolvemos su id_conductor.
  * Devuelve number o null.
  */
 async function resolveConductorId(inputId, transaction) {
@@ -91,7 +91,7 @@ exports.pool = async (req, res) => {
 };
 
 /**
- * ✅ Aceptar servicio (atómico)
+ * Aceptar servicio
  * POST /api/servicio/:id/accept  body: { id_conductor }
  *
  * IMPORTANTE:
@@ -159,7 +159,7 @@ exports.findAll = async (req, res) => {
     if (tipo_servicio) where.tipo_servicio = tipo_servicio;
     if (id_usuario) where.id_usuario = id_usuario;
 
-    // ✅ FIX: si el frontend manda id_usuario (8/9) en id_conductor,
+    // FIX: si el frontend manda id_usuario (8/9) en id_conductor,
     // lo resolvemos a id_conductor real (1/2) como en accept.
     if (id_conductor) {
       const realConductorId = await resolveConductorId(id_conductor, null);
@@ -180,9 +180,8 @@ exports.findAll = async (req, res) => {
   }
 };
 
-/**
- * PATCH /api/servicio/:id/estado
- * body: { estado, precio_final? }  (si tú usas precio_final en frontend, lo respetamos)
+/*
+ * body: { estado, precio_final? }
  */
 exports.setEstado = async (req, res) => {
   try {
@@ -201,7 +200,7 @@ exports.setEstado = async (req, res) => {
 
     if (estado === "completado") patch.fecha_completado = new Date();
 
-    // Compatibilidad: si tu frontend manda precio_final, lo guardamos en "precio"
+    // Compatibilidad: si frontend manda precio_final, lo guardamos en "precio"
     if (precio_final !== undefined) patch.precio = precio_final;
     if (precio !== undefined) patch.precio = precio;
 

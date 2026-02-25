@@ -21,7 +21,7 @@ export class RegisterPage {
     error = '';
     okMsg = '';
 
-    // ✅ Foto perfil
+    // Foto perfil
     @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
     selectedFile: File | null = null;
     photoPreview: string | null = null; // dataURL o webPath
@@ -102,7 +102,7 @@ export class RegisterPage {
 
         this.loading = true;
 
-        // ✅ multipart/form-data
+        //multipart/form-data
         const form = new FormData();
         form.append('nombre', nombre);
         form.append('email', email);

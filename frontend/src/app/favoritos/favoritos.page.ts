@@ -82,7 +82,7 @@ export class FavoritosPage {
   }
 
   useFavorito(f: Favorito): void {
-    // ✅ Volver a Home y pasar la ruta seleccionada
+    // Volver a Home y pasar la ruta seleccionada
     this.router.navigateByUrl('/home', { state: { fav: f } });
   }
 }
