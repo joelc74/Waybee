@@ -53,6 +53,16 @@ WAYBEE_APP/
 
 * **Usuario** → Solicita viajes o envíos
 * **Conductor/Repartidor** → Acepta y gestiona servicios
+  ** INSERT INTO usuario
+(nombre, email, telefono, activo, password_hash, fecha_registro, rol, img_profile)
+VALUES
+('Gerardo Martín', 'gmartin@waybee.com', '657489376', 1,
+'$2a$12$pB4b/D7O1ZSE8Hp1B1GTEeksvoB1xV4X5Bfv0oZhrkNL9Rg4sLm.S', NOW(), 'driver', NULL);
+ ** INSERT INTO conductor
+(id_usuario, disponible, rating_promedio, fecha_alta)
+VALUES
+(9, 1, 0.00, NOW());
+
 * **Administrador** → Control operativo y supervisión
 
 Control de acceso mediante JWT.
