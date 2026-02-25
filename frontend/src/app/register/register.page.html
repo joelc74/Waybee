@@ -1,31 +1,23 @@
-<ion-header class="wb-header" [translucent]="true">
-  <ion-toolbar class="wb-toolbar">
-    <div class="wb-topbar">
-      <div class="wb-logo">
-        <img src="assets/Images/logo/waybee-logo.png" alt="Waybee" />
-      </div>
-
-      <div class="wb-right-icons">
-        <ion-button fill="clear" class="wb-bell" aria-label="Notificaciones">
-          <ion-icon name="notifications"></ion-icon>
-        </ion-button>
-
-        <div class="wb-user" aria-label="Usuario">
-          <ion-icon name="person"></ion-icon>
-        </div>
-      </div>
-    </div>
-  </ion-toolbar>
-</ion-header>
-
 <ion-content [fullscreen]="true" class="wb-content">
   <div class="wb-auth">
     <div class="wb-card">
       <div class="wb-card-title">Crear cuenta</div>
-      <div class="wb-card-sub">Registro solo para usuarios</div>
+      <div class="wb-card-sub">Registro</div>
 
-      <div class="wb-note">
-        Conductores por alta manual.
+      <!-- SWITCH ROL -->
+      <label class="wb-label">Tipo de cuenta</label>
+      <div class="wb-location-pill wb-input-pill wb-role-pill">
+        <ion-icon name="swap-horizontal-outline" class="wb-loc-icon"></ion-icon>
+
+        <div class="wb-role-inline">
+          <div class="wb-role-title">Registrarme como conductor</div>
+          <div class="wb-role-sub">
+            <span *ngIf="!isDriver">Usuario</span>
+            <span *ngIf="isDriver">Driver</span>
+          </div>
+        </div>
+
+        <ion-toggle [(ngModel)]="isDriver" aria-label="Registrarme como conductor"></ion-toggle>
       </div>
 
       <!-- FOTO PERFIL (opcional) - MISMO ESTILO WAYBEE -->
