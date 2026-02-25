@@ -2,6 +2,7 @@
 # Waybee – Proyecto Final DAM (PPP)
 
 Waybee es una aplicación híbrida desarrollada como Proyecto Final de Ciclo Superior de Desarrollo de Aplicaciones Multiplataforma (DAM). La plataforma combina **movilidad bajo demanda (viajes)** y **servicios de envío** en una única app.
+(Hay una estimación de precios en los viajes que no se adapta a la realidad; simplemente son ejemplos de funcionalidad)
 
 ---
 
@@ -12,7 +13,7 @@ Monorepo estructurado en dos bloques principales:
 ```
 WAYBEE_APP/
  ├── backend/        → API REST (Node.js)
- ├── prisma/         → Esquema y migraciones BD
+ ├── Sequelize       → ORM
  └── frontend/
       └── waybee-frontend/ → App Ionic + Angular
 ```
@@ -34,7 +35,7 @@ WAYBEE_APP/
 
 * Node.js
 * Express
-* Prisma ORM
+* Sequelize ORM
 * MySQL
 * JWT (autenticación)
 * Multer (subida de imágenes de perfil)
@@ -80,11 +81,15 @@ Control de acceso mediante JWT.
 ## 🗄️ Base de Datos
 
 Motor: MySQL
-ORM: Prisma
+ORM: Sequelize
 
 Entidades principales:
 
 * Usuario
+* Conductor
+* Pago
+* Valoracion
+* Vehiculo
 * Servicio
 * Favoritos
 * Roles
@@ -93,7 +98,7 @@ Configuración en:
 
 ```
 backend/.env
-prisma/schema.prisma
+configuración mediante modelos Sequelize
 ```
 
 ---
@@ -105,7 +110,8 @@ prisma/schema.prisma
 ```
 cd backend
 npm install
-npx prisma migrate dev
+npm install sequelize mysql2
+npx sequelize-cli init
 npm run dev
 ```
 
@@ -122,7 +128,7 @@ PORT=
 ### 2️⃣ Frontend
 
 ```
-cd frontend/waybee-frontend
+cd frontend/waybee/frontend
 npm install
 ionic serve
 ```
@@ -130,6 +136,11 @@ ionic serve
 Para Android:
 
 ```
+cd frontend/waybee/frontend
+npm list @capacitor/core
+npm install @capacitor/core @capacitor/cli
+npx cap add android
+ionic build
 npx cap sync
 npx cap open android
 ```
@@ -155,6 +166,11 @@ npx cap open android
 * Arquitectura preparada para ampliaciones futuras.
 
 ---
+
+## 📝 NOTA: 
+En un principio se planteó utilizar Prisma como ORM. Finalmente se desestimó esta opción y se optó por Sequelize, por ofrecer una integración más directa con la arquitectura ya construida y un control más explícito sobre los modelos y relaciones.
+
+La mayor dificultad técnica del proyecto fue tomar la decisión de no implementar un sistema completo de migraciones y mantener el enfoque en un MVP funcional, priorizando estabilidad, claridad estructural y cumplimiento de los criterios académicos frente a sobreingeniería.
 
 ## 👨‍💻 Autores
 
