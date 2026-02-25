@@ -290,7 +290,7 @@ export class HomePage implements AfterViewInit {
       precio: Number(this.lastPrice.toFixed(2)),
     };
 
-    // ✅ Si es ENVÍO, añadimos campos del paquete
+    // Si es ENVÍO, añadimos campos del paquete
     if (this.selectedService === 'envio') {
       const dims = `${this.envioAnchoCm}x${this.envioLargoCm}x${this.envioAltoCm} cm`;
       (payload as any).peso_paquete = Number((this.envioPesoKg ?? 0).toFixed(2));

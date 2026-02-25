@@ -78,7 +78,7 @@ exports.register = async (req, res) => {
       password_hash,
       fecha_registro: new Date(),
       rol: "user",
-      img_profile, // ✅ NUEVO
+      img_profile,
     });
 
     const token = signToken(user);
