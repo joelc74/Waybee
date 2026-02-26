@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
 const Usuario = db.usuario;
+const Conductor = db.conductor;
 
 function signToken(user) {
   const payload = {
@@ -39,7 +40,7 @@ exports.login = async (req, res) => {
         nombre: user.nombre,
         email: user.email,
         rol: user.rol,
-        img_profile: user.img_profile || null, // ✅
+        img_profile: user.img_profile || null,
       },
     });
   } catch (e) {
@@ -47,13 +48,14 @@ exports.login = async (req, res) => {
   }
 };
 
-//  Registro SOLO para usuarios (no conductores)
-//  Soporta multipart/form-data: req.file (img_profile) + req.body (resto)
 exports.register = async (req, res) => {
+  const t = await db.sequelize.transaction();
+
   try {
     const { nombre, email, telefono, password } = req.body || {};
 
     if (!nombre || !email || !telefono || !password) {
+      await t.rollback();
       return res.status(400).json({
         message: "nombre, email, telefono y password son obligatorios.",
       });
@@ -61,14 +63,17 @@ exports.register = async (req, res) => {
 
     const exists = await Usuario.findOne({ where: { email } });
     if (exists) {
+      await t.rollback();
       return res.status(409).json({ message: "Ya existe un usuario con ese email." });
     }
 
     const password_hash = await bcrypt.hash(password, 12);
 
-    // Si se subió imagen, guardamos la ruta pública
-    // index.js ya sirve: /images -> backend/public/images
     const img_profile = req.file ? `/images/${req.file.filename}` : null;
+
+    const rolRaw = req.body?.rol;
+    const rolNorm = String(rolRaw ?? "user").trim().toLowerCase();
+    const rolFinal = (rolNorm === "user" || rolNorm === "driver" || rolNorm === "admin") ? rolNorm : "user";
 
     const user = await Usuario.create({
       nombre: nombre.trim(),
@@ -77,9 +82,17 @@ exports.register = async (req, res) => {
       activo: true,
       password_hash,
       fecha_registro: new Date(),
-      rol: "user",
+      rol: rolFinal,
       img_profile,
-    });
+    }, { transaction: t });
+
+    if (user.rol === "driver") {
+      await Conductor.create({
+        id_usuario: user.id_usuario,
+      }, { transaction: t });
+    }
+
+    await t.commit();
 
     const token = signToken(user);
 
@@ -90,15 +103,15 @@ exports.register = async (req, res) => {
         nombre: user.nombre,
         email: user.email,
         rol: user.rol,
-        img_profile: user.img_profile || null, 
+        img_profile: user.img_profile || null,
       },
     });
   } catch (e) {
+    await t.rollback();
     return res.status(500).json({ message: e.message || "Error en registro." });
   }
 };
 
-// endpoint para probar el token fácilmente
 exports.me = async (req, res) => {
   const { password_hash, ...safeUser } = req.user.toJSON();
 

@@ -118,6 +118,7 @@ export class RegisterPage {
     // campo archivo: img_profile
     if (this.selectedFile) {
       form.append('img_profile', this.selectedFile, this.selectedFile.name);
+  
     }
 
     // ✅ MISMO endpoint (recomendado si tu backend acepta "rol")
@@ -142,6 +143,7 @@ export class RegisterPage {
     //   next: () => { ... },
     //   error: (e) => { ... }
     // });
+    console.log('isDriver=', this.isDriver);
   }
 
   goLogin() {

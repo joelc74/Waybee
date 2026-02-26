@@ -1,28 +1,34 @@
-// backend/controllers/usuario.controller.js
 const db = require("../models");
 const bcrypt = require("bcrypt");
 
 const Usuario = db.usuario;
+const Conductor = db.conductor;
 
 exports.create = async (req, res) => {
+  const t = await db.sequelize.transaction();
+
   try {
     const body = req.body || {};
 
     if (!body.nombre || !body.email) {
+      await t.rollback();
       return res.status(400).json({ message: "nombre y email son obligatorios." });
     }
 
-    // password
     let password_hash = body.password_hash;
     if (!password_hash && body.password) {
       password_hash = await bcrypt.hash(body.password, 12);
     }
     if (!password_hash) {
+      await t.rollback();
       return res.status(400).json({ message: "password o password_hash es obligatorio." });
     }
 
-    // si viene archivo (multipart), guardamos ruta en img_profile
     const img_profile = req.file?.filename ? `/images/${req.file.filename}` : null;
+
+    const rolRaw = body.rol;
+    const rolNorm = String(rolRaw ?? "user").trim().toLowerCase();
+    const rolFinal = (rolNorm === "user" || rolNorm === "driver" || rolNorm === "admin") ? rolNorm : "user";
 
     const usuario = await Usuario.create({
       nombre: body.nombre,
@@ -30,12 +36,21 @@ exports.create = async (req, res) => {
       telefono: body.telefono || null,
       activo: body.activo ?? true,
       password_hash,
-      rol: body.rol || "user",
+      rol: rolFinal,
       img_profile: img_profile || body.img_profile || null,
-    });
+    }, { transaction: t });
 
+    if (usuario.rol === "driver") {
+      await Conductor.create({
+        id_usuario: usuario.id_usuario
+      }, { transaction: t });
+    }
+
+    await t.commit();
     return res.status(201).json(usuario);
+
   } catch (e) {
+    await t.rollback();
     return res.status(500).json({ message: e.message || "Error creando usuario." });
   }
 };
@@ -76,17 +91,13 @@ exports.findOne = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const id = req.params.id;
-
-    // Con multipart, multer rellena req.body con strings
     const body = req.body || {};
 
     const usuario = await Usuario.findByPk(id);
     if (!usuario) return res.status(404).json({ message: "Usuario no encontrado." });
 
-    // si llega archivo, actualizamos img_profile
     const newImgProfile = req.file?.filename ? `/images/${req.file.filename}` : null;
 
-    
     if (body.password) {
       body.password_hash = await bcrypt.hash(body.password, 12);
       delete body.password;
@@ -99,11 +110,14 @@ exports.update = async (req, res) => {
     if (body.telefono !== undefined) patch.telefono = body.telefono;
 
     if (body.activo !== undefined) patch.activo = body.activo;
-    if (body.rol !== undefined) patch.rol = body.rol;
+
+    if (body.rol !== undefined) {
+      const rolNorm = String(body.rol ?? "user").trim().toLowerCase();
+      patch.rol = (rolNorm === "user" || rolNorm === "driver" || rolNorm === "admin") ? rolNorm : usuario.rol;
+    }
 
     if (body.password_hash !== undefined) patch.password_hash = body.password_hash;
 
-    // solo si hay archivo
     if (newImgProfile) patch.img_profile = newImgProfile;
 
     await usuario.update(patch);
